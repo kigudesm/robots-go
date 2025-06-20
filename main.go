@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+
+    // "fmt"
+    "robots-go/utils"
+)
 
 func main() {
-    fmt.Println("Hello, VS Code & Goo!")
+    utils.Read()
 }
