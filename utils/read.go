@@ -8,7 +8,7 @@ import (
     "os"
 )
 
-func Read() {
+func Read() (map[string]interface{}) {
     // Открываем JSON файл
     file, err := os.Open("Input_samples/regular_match.json")
     if err != nil {
@@ -23,23 +23,28 @@ func Read() {
     }
 
     // Объявляем переменную для неизвестной структуры
-    var data interface{}
+    var data map[string]interface{}
 
     // Десериализация в интерфейс
     err = json.Unmarshal(bytes, &data)
     if err != nil {
         log.Fatalf("Ошибка разбора JSON: %v", err)
-    }
+    } else{
+        events := data["events"]
+        fmt.Println("Найдено:", events)
+    }    
 
-    // Теперь, data содержит разобранную структуру
-    switch v := data.(type) {
-    case map[string]interface{}:
-        fmt.Println("Объект JSON (словарь):")
-        fmt.Printf("%#vn", v)
-    case []interface{}:
-        fmt.Println("Массив JSON:")
-        fmt.Printf("%#vn", v)
-    default:
-        fmt.Printf("Неопознанный тип данных: %Tn", v)
-    }
+    return data
+    
+    // // Теперь, data содержит разобранную структуру
+    // switch v := data.(type) {
+    // case map[string]interface{}:
+    //     fmt.Println("Объект JSON (словарь):")
+    //     fmt.Printf("%#vn", v)
+    // case []interface{}:
+    //     fmt.Println("Массив JSON:")
+    //     fmt.Printf("%#vn", v)
+    // default:
+    //     fmt.Printf("Неопознанный тип данных: %Tn", v)
+    // }
 }
