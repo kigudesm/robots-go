@@ -9,7 +9,7 @@ import (
 func main() {
     path := "Input_samples/regular_match.json"
     // data := utils.Read(path)
-    utils.readRequest(path)
+    utils.Read0(path)
 
     // // Простое извлечение
     // value, exists := data["events"]
