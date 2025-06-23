@@ -8,9 +8,9 @@ import (
     "os"
 )
 
-func Read() (map[string]interface{}) {
+func Read(path string) (map[string]interface{}) {
     // Открываем JSON файл
-    file, err := os.Open("Input_samples/regular_match.json")
+    file, err := os.Open(path)
     if err != nil {
         log.Fatalf("Ошибка открытия файла: %v", err)
     }
