@@ -3,13 +3,13 @@ package main
 import (
 
     // "fmt"        
-    "robots-go/Data_preparations/utils"
+    "github.com/kigudesm/robots-go/data_preparation/utils"
 )
 
 func main() {
     path := "Input_samples/regular_match.json"
     // data := utils.Read(path)
-    utils.Read(path)
+    utils.readRequest(path)
 
     // // Простое извлечение
     // value, exists := data["events"]

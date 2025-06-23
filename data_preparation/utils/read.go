@@ -8,7 +8,7 @@ import (
     "os"
 )
 
-func Read(path string) (map[string]interface{}) {
+func readRequest(path string) (map[string]interface{}) {
     // Открываем JSON файл
     file, err := os.Open(path)
     if err != nil {
