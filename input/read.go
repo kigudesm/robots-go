@@ -1,9 +1,9 @@
-package utils
+package input
 
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 )
@@ -17,7 +17,7 @@ func ReadRequest(path string) map[string]interface{} {
 	defer file.Close()
 
 	// Читаем содержимое файла
-	bytes, err := ioutil.ReadAll(file)
+	bytes, err := io.ReadAll(file)
 	if err != nil {
 		log.Fatalf("Ошибка чтения файла: %v", err)
 	}

@@ -1,15 +1,13 @@
 package main
 
 import (
-
-	// "fmt"
-	"github.com/kigudesm/robots-go/dataPreparation/utils"
+	"robots-go/input"
 )
 
 func main() {
-	path := "inputSamples/regularMatch.json"
-	// data := utils.Read(path)
-	utils.ReadRequest(path)
+	path := "test/regularMatch.json"
+	// data := utils.ReadRequest(path)
+	input.ReadRequest(path)
 
 	// // Простое извлечение
 	// value, exists := data["events"]
