@@ -3,11 +3,11 @@ package main
 import (
 
 	// "fmt"
-	"github.com/kigudesm/robots-go/data_preparation/utils"
+	"github.com/kigudesm/robots-go/dataPreparation/utils"
 )
 
 func main() {
-	path := "Input_samples/regular_match.json"
+	path := "inputSamples/regularMatch.json"
 	// data := utils.Read(path)
 	utils.ReadRequest(path)
 
