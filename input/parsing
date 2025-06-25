@@ -1,0 +1,24 @@
+package input
+
+import (
+	"fmt"
+)
+
+func PreparedInputFun(path string) []map[string]any {
+
+	request := readRequest(path)
+	ev := request["events"].([]any)
+
+	var events []map[string]any
+
+	for _, item := range ev {
+		if m, ok := item.(map[string]any); ok {
+			events = append(events, m)
+		}
+	}
+
+	fmt.Println(events)
+
+	return events
+
+}

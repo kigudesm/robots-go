@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func ReadRequest(path string) map[string]interface{} {
+func readRequest(path string) map[string]any {
 	// Открываем JSON файл
 	file, err := os.Open(path)
 	if err != nil {
@@ -20,30 +20,37 @@ func ReadRequest(path string) map[string]interface{} {
 	bytes, err := io.ReadAll(file)
 	if err != nil {
 		log.Fatalf("Ошибка чтения файла: %v", err)
+		return nil
 	}
 
 	// Объявляем переменную для неизвестной структуры
-	var data map[string]interface{}
+	var request map[string]any
 
 	// Десериализация в интерфейс
-	err = json.Unmarshal(bytes, &data)
+	err = json.Unmarshal(bytes, &request)
 	if err != nil {
 		log.Fatalf("Ошибка разбора JSON: %v", err)
-	} else {
-		events := data["events"]
-		fmt.Println("Найдено:", events)
+		return nil
 	}
 
-	return data
+	return request
+}
 
-	// // Теперь, data содержит разобранную структуру
-	// switch v := data.(type) {
-	// case map[string]interface{}:
-	//     fmt.Println("Объект JSON (словарь):")
-	//     fmt.Printf("%#vn", v)
-	// case []interface{}:
-	//     fmt.Println("Массив JSON:")
-	//     fmt.Printf("%#vn", v)
-	// default:
-	//     fmt.Printf("Неопознанный тип данных: %Tn", v)
+func PreparedInputFun(path string) []map[string]any {
+
+	request := readRequest(path)
+	ev := request["events"].([]any)
+
+	var events []map[string]any
+
+	for _, item := range ev {
+		if m, ok := item.(map[string]any); ok {
+			events = append(events, m)
+		}
+	}
+
+	fmt.Println(events)
+
+	return events
+
 }

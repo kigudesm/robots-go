@@ -1,3 +1,3 @@
-module github.com/kigudesm/robots-go
+module robots-go
 
-go 1.24.4
+go 1.24.3
