@@ -7,6 +7,6 @@ import (
 func main() {
 	path := "test/regularMatch.json"
 
-	input.PreparedInputFun(path)
+	input.PrepareInputFun(path)
 
 }

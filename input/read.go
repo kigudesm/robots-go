@@ -2,7 +2,6 @@ package input
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -34,23 +33,4 @@ func readRequest(path string) map[string]any {
 	}
 
 	return request
-}
-
-func PreparedInputFun(path string) []map[string]any {
-
-	request := readRequest(path)
-	ev := request["events"].([]any)
-
-	var events []map[string]any
-
-	for _, item := range ev {
-		if m, ok := item.(map[string]any); ok {
-			events = append(events, m)
-		}
-	}
-
-	fmt.Println(events)
-
-	return events
-
 }
