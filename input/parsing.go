@@ -21,9 +21,6 @@ func convertEventToStruct(ev map[string]any) Event {
 	event.ID = int64(ev["id"].(float64))
 
 	event.RegTime, _ = time.Parse("02.01.2006 15:04:05", ev["regtime"].(string))
-	// if regtime, ok := ev["regtime"].(string); ok {
-	// 	event.RegTime = regtime
-	// }
 
 	event.Type = int(ev["type"].(float64))
 
