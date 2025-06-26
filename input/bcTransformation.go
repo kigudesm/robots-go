@@ -2,20 +2,28 @@ package input
 
 import (
 	"math"
+	"sort"
 )
 
-// // Исключение событий с типом 1020 и тех на которые они ссылаются
-// func bcExclude1020(events []Event) []Event {
-// 	var result []Event
-// 	for _, ev := range events {
-// 		if condition(v) {
-// 			result = append(result, ev)
-// 		}
-// 	}
-// 	return result
-// }
+var BCStatistics = map[int]struct{}{
+	1006: {}, 1052: {}, 1145: {}, 1171: {}, 1172: {}, 1173: {}, 1621: {}, 1200: {}, 1201: {}, 1202: {},
+	1203: {}, 1204: {}, 1205: {}, 1206: {}, 1207: {}, 1208: {}, 1209: {}, 1210: {}, 1211: {}, 1212: {},
+	1213: {}, 1214: {}, 1215: {}, 1216: {}, 1217: {}, 1218: {}, 1219: {}, 1220: {}, 1221: {}, 1222: {},
+	1224: {}, 1225: {}, 1226: {}, 1227: {}, 1233: {}, 1250: {}, 1251: {}, 1411: {}, 1418: {}, 1538: {},
+	1550: {}, 1551: {}, 1552: {}, 1554: {}, 1560: {}, 1561: {}, 1564: {}, 1565: {}, 1576: {}, 1586: {},
+	1597: {}, 1620: {}, 1622: {}, 1720: {}, 1721: {}, 1857: {}, 1853: {}, 1854: {}, 1855: {}, 1858: {},
+	2001: {}, 2002: {}, 2003: {}, 2011: {}, 2021: {}, 2022: {}, 2031: {}, 2041: {}, 2061: {}, 2062: {},
+	2063: {}, 2064: {}, 2065: {}, 2066: {}, 2067: {}, 2681: {}, 2682: {}, 3020: {}, 3021: {}, 3100: {},
+	3101: {}, 3102: {}, 3103: {}, 3105: {}, 3201: {}, 1813: {}, 1859: {}, 1863: {}, 2070: {}, 1477: {},
+	1867: {}, 1242: {}, 1866: {}, 1161: {}, 3104: {},
+}
 
-func bcExclude1020(events []Event) []Event {
+func isBCStatisticsID(typ int) bool {
+	_, exists := BCStatistics[typ]
+	return exists
+}
+
+func bcExcludeEvents(events []Event) []Event {
 	// Создаем map для исключаемых ID (используем map для быстрого поиска)
 	excludeMap := make(map[int64]bool)
 
@@ -33,11 +41,16 @@ func bcExclude1020(events []Event) []Event {
 	// Фильтруем исходный слайс
 	var result []Event
 	for _, ev := range events {
-		// Исключаем события типа 1020 и те, чьи ID есть в excludeMap
-		if ev.Type != 1020 && !excludeMap[ev.ID] {
+		// Исключаем события типа 1020 и в BCStatistics и те, чьи ID есть в excludeMap
+		if ev.Type != 1020 && !excludeMap[ev.ID] && !isBCStatisticsID(ev.Type) {
 			result = append(result, ev)
 		}
 	}
+
+	// Сортировка по убыванию ID
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].ID > result[j].ID
+	})
 
 	return result
 }

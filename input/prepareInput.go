@@ -6,11 +6,13 @@ import (
 
 func PrepareInputFun(path string) []Event {
 
-	request := readRequest(path)
-	events := parsingEventsFun(request)
-	events = bcExclude1020(events)
+	request := readRequest(path) // read request
+	settings := parsingSettingsFun(request)
+	events := parsingEventsFun(request) // parse events
+	events = bcExcludeEvents(events)    // exclude 1020 and statistics
 
-	fmt.Println(events)
+	fmt.Println(len(events))
+	fmt.Println(settings)
 
 	return events
 }
