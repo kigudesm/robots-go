@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	path := "test/regularMatch.json"
+	path := "test/regular.json"
 
 	input.PrepareInputFun(path)
 
