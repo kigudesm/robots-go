@@ -2,6 +2,7 @@ package input
 
 import (
 	"math"
+	"robots-go/utils"
 	"sort"
 )
 
@@ -16,11 +17,6 @@ var BCStatistics = map[int]struct{}{
 	2063: {}, 2064: {}, 2065: {}, 2066: {}, 2067: {}, 2681: {}, 2682: {}, 3020: {}, 3021: {}, 3100: {},
 	3101: {}, 3102: {}, 3103: {}, 3105: {}, 3201: {}, 1813: {}, 1859: {}, 1863: {}, 2070: {}, 1477: {},
 	1867: {}, 1242: {}, 1866: {}, 1161: {}, 3104: {},
-}
-
-func isBCStatisticsID(typ int) bool {
-	_, exists := BCStatistics[typ]
-	return exists
 }
 
 func bcExcludeEvents(events []Event) []Event {
@@ -42,7 +38,7 @@ func bcExcludeEvents(events []Event) []Event {
 	var result []Event
 	for _, ev := range events {
 		// Исключаем события типа 1020 и в BCStatistics и те, чьи ID есть в excludeMap
-		if ev.Type != 1020 && !excludeMap[ev.ID] && !isBCStatisticsID(ev.Type) {
+		if ev.Type != 1020 && !excludeMap[ev.ID] && !utils.IsinSet(ev.Type, BCStatistics) {
 			result = append(result, ev)
 		}
 	}

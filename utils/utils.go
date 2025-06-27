@@ -1,4 +1,4 @@
-package input
+package utils
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func readRequest(path string) map[string]any {
+func ReadRequest(path string) map[string]any {
 	// Открываем JSON файл
 	file, err := os.Open(path)
 	if err != nil {
@@ -33,4 +33,9 @@ func readRequest(path string) map[string]any {
 	}
 
 	return request
+}
+
+func IsinSet(item int, set map[int]struct{}) bool {
+	_, exists := set[item]
+	return exists
 }
