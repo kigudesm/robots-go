@@ -19,7 +19,7 @@ var BCStatistics = map[int]struct{}{
 	1867: {}, 1242: {}, 1866: {}, 1161: {}, 3104: {},
 }
 
-func bcExcludeEvents(events []Event) []Event {
+func bcExcludeEvents(events []EventStruct) []EventStruct {
 	// Создаем map для исключаемых ID (используем map для быстрого поиска)
 	excludeMap := make(map[int64]bool)
 
@@ -35,7 +35,7 @@ func bcExcludeEvents(events []Event) []Event {
 	}
 
 	// Фильтруем исходный слайс
-	var result []Event
+	var result []EventStruct
 	for _, ev := range events {
 		// Исключаем события типа 1020 и в BCStatistics и те, чьи ID есть в excludeMap
 		if ev.Type != 1020 && !excludeMap[ev.ID] && !utils.IsinSet(ev.Type, BCStatistics) {

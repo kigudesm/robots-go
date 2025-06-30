@@ -16,6 +16,11 @@ var BcStart = map[int]string{
 	1118: "half",
 }
 
+var BcEnd = map[int]string{
+	1103: "match",
+	1102: "half",
+}
+
 var EventKinds = map[string]struct {
 	Name string
 	Kind string
@@ -41,5 +46,4 @@ var EventKinds = map[string]struct {
 	"11000201": {"first", "throw-ins"},
 	"401100":   {"match", "goal kicks"},
 	"11100201": {"first", "goal kicks"},
-	"0":        {"match", "None"},
 }

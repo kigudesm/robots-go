@@ -6,7 +6,7 @@ import (
 )
 
 // Трансляция
-type Event struct {
+type EventStruct struct {
 	ID      int64  // id события
 	RegTime string // время
 	Type    int    // тип
@@ -16,9 +16,9 @@ type Event struct {
 	I3 *int
 }
 
-func convertEventToStruct(ev map[string]any) Event {
+func convertEventToStruct(ev map[string]any) EventStruct {
 
-	var event Event
+	var event EventStruct
 
 	// Обязательные поля
 	event.ID = int64(ev["id"].(float64))
@@ -44,11 +44,11 @@ func convertEventToStruct(ev map[string]any) Event {
 	return event
 }
 
-func parsingEventsFun(request map[string]any) []Event {
+func parsingEventsFun(request map[string]any) []EventStruct {
 
 	evs := request["events"].([]any)
 
-	var events []Event
+	var events []EventStruct
 
 	for _, item := range evs {
 		if ev, ok := item.(map[string]any); ok {
@@ -61,16 +61,17 @@ func parsingEventsFun(request map[string]any) []Event {
 }
 
 // Настройки матча
-type Settings struct {
-	TargetEventKind []string // Целевые рынки
-	MatchType       string   // Тип матча (обычный, товарищеский, 2 по 40 и т.п.)
-	HalfDuration    int      // Длительность тайма
-	MatchDuration   int      // Длительность матча
-	InjuryDefault   [2]int   // Компенсированное время по умолчанию
-	ServerTime      int64    // Время сервера
+type SettingsStruct struct {
+	MatchType          string   // Тип матча (обычный, товарищеский, 2 по 40 и т.п.)
+	EventGameTypeIdent string   // Тип матча (с добаленным временем, серией пенальти и т.п.)
+	HalfDuration       int64    // Длительность тайма
+	MatchDuration      int64    // Длительность матча
+	InjuryDefault      [2]int   // Компенсированное время по умолчанию
+	ServerTime         int64    // Время сервера
+	TargetEventKind    []string // Целевые рынки
 }
 
-func parsingSettingsFun(request map[string]any) Settings {
+func parsingSettingsFun(request map[string]any) SettingsStruct {
 
 	set := request["settings"].(map[string]any)
 
@@ -87,15 +88,24 @@ func parsingSettingsFun(request map[string]any) Settings {
 	ident, _ := set["sportRules"].(map[string]any)["object"].(map[string]any)["ident"].(string)
 	matchType := gametypes.MatchTypes[ident]
 
+	// Парсим EventGameTypeIdent
+	var eGTI string
+	if set["eventGameTypeIdent"] == nil {
+		eGTI = "regular"
+	} else {
+		eGTI = set["eventGameTypeIdent"].(string)
+	}
+
 	//Парсим serverTime
 	num, _ := strconv.ParseInt(set["serverTime"].(string), 10, 64)
 
 	// Заполняем Settings
-	var settings Settings
+	var settings SettingsStruct
 	settings.TargetEventKind = targetEventKind
 	settings.MatchType = ident
-	settings.HalfDuration = matchType.HalfDuration
-	settings.MatchDuration = 2 * matchType.HalfDuration
+	settings.EventGameTypeIdent = eGTI
+	settings.HalfDuration = int64(matchType.HalfDuration)
+	settings.MatchDuration = 2 * int64(matchType.HalfDuration)
 	settings.InjuryDefault[0] = matchType.TFirstHalf - matchType.HalfDuration
 	settings.InjuryDefault[1] = matchType.TSecondHalf - matchType.HalfDuration
 	settings.ServerTime = num / 1000
