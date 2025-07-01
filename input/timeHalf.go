@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Трансляция
+// Период в матче
 type Part struct {
 	IsGoing bool // Идет ли игра
 	Nmb     int  // Номер периода (Если игра идет: 3 или 4 дополнительное время, 5 серия пенальти;
@@ -18,7 +18,7 @@ func bcTimeToTimestamp(regtime string) int64 {
 }
 
 // Вычисление Part и Timer
-func timerPart(events []EventStruct, timestamp int64, settings SettingsStruct) (Part, int64) {
+func partTimer(events []EventStruct, timestamp int64, settings SettingsStruct) (Part, int64) {
 	var part Part
 	var timer int64
 	for i, event := range events {
@@ -69,12 +69,11 @@ func timerPart(events []EventStruct, timestamp int64, settings SettingsStruct) (
 			}
 		case event.Type == 1103:
 			{ // Первое подходящее событие - окончание матча
+				part.IsGoing = false
 				if settings.EventGameTypeIdent == "regular" {
-					part.IsGoing = false
 					part.Nmb = -1
 					return part, settings.MatchDuration
 				} else {
-					part.IsGoing = false
 					part.Nmb = 2
 					return part, settings.MatchDuration
 				}
@@ -109,55 +108,3 @@ func timerPart(events []EventStruct, timestamp int64, settings SettingsStruct) (
 	part.Nmb = 0
 	return part, 0
 }
-
-// // Преобразуем последний символ half в число (например, "half1" -> 1)
-// halfNum, err := strconv.Atoi(string(half[len(half)-1]))
-// if err != nil {
-// 	return -1
-// }
-
-// for i, event := range events {
-// 	switch {
-// 	case utils.IsinSet(event.Type, utils.BcTimer) && *event.I2 == halfNum:
-// 		{
-// 			regtime := bcTimeToTimestamp(event.RegTime)
-// 			timer := int64(*event.I3) + timestamp - regtime
-
-// 			// Ищем следующее подходящее событие
-// 			var timerOld int64 = -1
-// 			for j := i + 1; j < len(events); j++ {
-// 				nextEvent := events[j]
-// 				if utils.IsinSet(nextEvent.Type, utils.BcTimer) && *nextEvent.I2 == halfNum {
-// 					regtimeOld := bcTimeToTimestamp(nextEvent.RegTime)
-// 					timerOld = int64(*nextEvent.I3) + timestamp - regtimeOld
-// 					break
-// 				}
-// 			}
-// 			return max(timer, timerOld)
-// 		}
-// 		// case utils.IsinSet(event.Type, utils.BcStart): {
-
-// 		// }
-// 	}
-
-// // Проверяем условие для текущего события
-// if utils.IsinSet(event.Type, utils.BcTimer) && *event.I2 == halfNum {
-// 	regtime := bcTimeToTimestamp(event.RegTime)
-// 	timer := int64(*event.I3) + timestamp - regtime
-
-// 	// Ищем следующее подходящее событие
-// 	var timerOld int64 = -1
-// 	for j := i + 1; j < len(events); j++ {
-// 		nextEvent := events[j]
-// 		if utils.IsinSet(nextEvent.Type, utils.BcTimer) && *nextEvent.I2 == halfNum {
-// 			regtimeOld := bcTimeToTimestamp(nextEvent.RegTime)
-// 			timerOld = int64(*nextEvent.I3) + timestamp - regtimeOld
-// 			break
-// 		}
-// 	}
-
-// 	return max(timer, timerOld)
-// }
-// 	}
-// 	return 0
-// }

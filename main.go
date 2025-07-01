@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	path := "test/extraPart3.json"
+	path := "test/regular.json"
 
 	input.PrepareInputFun(path)
 

@@ -11,16 +11,6 @@ var BcTimer = map[int]struct{}{
 	1197: {}, 1198: {}, 1199: {}, 1228: {}, 1234: {}, 1255: {},
 }
 
-var BcStart = map[int]string{
-	1105: "match",
-	1118: "half",
-}
-
-var BcEnd = map[int]string{
-	1103: "match",
-	1102: "half",
-}
-
 var EventKinds = map[string]struct {
 	Name string
 	Kind string

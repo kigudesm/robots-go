@@ -69,6 +69,7 @@ type SettingsStruct struct {
 	InjuryDefault      [2]int   // Компенсированное время по умолчанию
 	ServerTime         int64    // Время сервера
 	TargetEventKind    []string // Целевые рынки
+	Block              []string // Заблокированные eventKind
 }
 
 func parsingSettingsFun(request map[string]any) SettingsStruct {

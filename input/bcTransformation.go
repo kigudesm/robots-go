@@ -50,3 +50,50 @@ func bcExcludeEvents(events []EventStruct) []EventStruct {
 
 	return result
 }
+
+// Исключение из трансляции ошибочных событий 1102 и 1103
+func bcExcludeMistakes(events []EventStruct, settings SettingsStruct) ([]EventStruct, SettingsStruct) {
+
+	var timer int64
+	excludeMap := make(map[int]bool)
+
+	for i, event := range events {
+		switch event.Type {
+		case 1103:
+			{
+				_, timer = partTimer(events[i+1:], bcTimeToTimestamp(event.RegTime), settings)
+				if timer < settings.MatchDuration-120 {
+					excludeMap[i] = true
+					for _, ev := range events[:i] {
+						if utils.IsinSet(ev.Type, utils.Unblocks) {
+							break
+						}
+					}
+					settings.Block = settings.TargetEventKind
+				}
+			}
+		case 1102:
+			{
+				_, timer = partTimer(events[i+1:], bcTimeToTimestamp(event.RegTime), settings)
+				if timer < settings.HalfDuration*int64(*event.I1)-120 {
+					excludeMap[i] = true
+					for _, ev := range events[:i] {
+						if utils.IsinSet(ev.Type, utils.Unblocks) {
+							break
+						}
+					}
+					settings.Block = settings.TargetEventKind
+				}
+			}
+		}
+	}
+
+	var result []EventStruct
+	for i, v := range events {
+		if !excludeMap[i] {
+			result = append(result, v)
+		}
+	}
+
+	return result, settings
+}
