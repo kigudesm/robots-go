@@ -130,3 +130,45 @@ func moveUp1102(events []EventStruct) []EventStruct {
 
 	return events
 }
+
+func bcReverse(events []EventStruct) []EventStruct {
+	for _, event := range events {
+		if value, ok := eventsWithTeam[event.Type]; ok {
+			switch value {
+			case "i1":
+				{
+					*event.I1 = 3 - *event.I1
+				}
+			case "i2":
+				{
+					*event.I2 = 3 - *event.I2
+				}
+			case "i3":
+				{
+					*event.I3 = 3 - *event.I3
+				}
+			case "i4":
+				{
+					*event.I4 = 3 - *event.I4
+				}
+			case "i5":
+				{
+					*event.I5 = 3 - *event.I5
+				}
+			}
+		}
+	}
+	return events
+}
+
+func bcTransformation(request map[string]any, settings SettingsStruct) ([]EventStruct, SettingsStruct) {
+	events := parsingEventsFun(request)                    // parse events
+	events = bcExcludeEvents(events)                       // exclude 1020 and statistics
+	events, settings = bcExcludeMistakes(events, settings) // exclude ends 1102 and 1103 with mistakes
+	events = moveUp1102(events)                            // move up 1102 if mistake
+	if settings.SportscastReverseTeams {                   //reverse broadcast if SportscastReverseTeams == true
+		events = bcReverse(events)
+	}
+
+	return events, settings
+}

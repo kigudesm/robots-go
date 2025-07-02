@@ -14,6 +14,8 @@ type EventStruct struct {
 	I1 *int
 	I2 *int
 	I3 *int
+	I4 *int
+	I5 *int
 }
 
 func convertEventToStruct(ev map[string]any) EventStruct {
@@ -41,6 +43,16 @@ func convertEventToStruct(ev map[string]any) EventStruct {
 		event.I3 = &val
 	}
 
+	if i4, ok := ev["i4"].(float64); ok {
+		val := int(i4)
+		event.I4 = &val
+	}
+
+	if i5, ok := ev["i5"].(float64); ok {
+		val := int(i5)
+		event.I5 = &val
+	}
+
 	return event
 }
 
@@ -62,15 +74,16 @@ func parsingEventsFun(request map[string]any) []EventStruct {
 
 // Настройки матча
 type SettingsStruct struct {
-	MatchType          string               // Тип матча (обычный, товарищеский, 2 по 40 и т.п.)
-	EventGameTypeIdent string               // Тип матча (с добаленным временем, серией пенальти и т.п.)
-	HalfDuration       int64                // Длительность тайма
-	MatchDuration      int64                // Длительность матча
-	PartTimes          map[int]PartBeginEnd // Начало и конец таймов
-	InjuryDefault      [2]int               // Компенсированное время по умолчанию
-	ServerTime         int64                // Время сервера
-	TargetEventKind    []string             // Целевые рынки
-	Block              []string             // Заблокированные eventKind
+	MatchType              string               // Тип матча (обычный, товарищеский, 2 по 40 и т.п.)
+	EventGameTypeIdent     string               // Тип матча (с добаленным временем, серией пенальти и т.п.)
+	HalfDuration           int64                // Длительность тайма
+	MatchDuration          int64                // Длительность матча
+	PartTimes              map[int]PartBeginEnd // Начало и конец таймов
+	SportscastReverseTeams bool                 // реверсивная трансляция
+	InjuryDefault          [2]int               // Компенсированное время по умолчанию
+	ServerTime             int64                // Время сервера
+	TargetEventKind        []string             // Целевые рынки
+	Block                  []string             // Заблокированные eventKind
 }
 
 func parsingSettingsFun(request map[string]any) SettingsStruct {
@@ -115,6 +128,7 @@ func parsingSettingsFun(request map[string]any) SettingsStruct {
 		4: {Begin: settings.MatchDuration + 900, End: settings.MatchDuration + 1800},
 		5: {Begin: settings.MatchDuration + 1800, End: settings.MatchDuration + 1800},
 	}
+	settings.SportscastReverseTeams = set["sportscastReverseTeams"].(bool)
 	settings.InjuryDefault[0] = matchType.TFirstHalf - matchType.HalfDuration
 	settings.InjuryDefault[1] = matchType.TSecondHalf - matchType.HalfDuration
 	settings.ServerTime = num / 1000
