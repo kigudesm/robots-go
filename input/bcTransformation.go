@@ -55,6 +55,7 @@ func bcExcludeEvents(events []EventStruct) []EventStruct {
 func bcExcludeMistakes(events []EventStruct, settings SettingsStruct) ([]EventStruct, SettingsStruct) {
 
 	var timer int64
+	var part Part
 	excludeMap := make(map[int]bool)
 
 	for i, event := range events {
@@ -64,25 +65,32 @@ func bcExcludeMistakes(events []EventStruct, settings SettingsStruct) ([]EventSt
 				_, timer = partTimer(events[i+1:], bcTimeToTimestamp(event.RegTime), settings)
 				if timer < settings.MatchDuration-120 {
 					excludeMap[i] = true
+					flag := true
 					for _, ev := range events[:i] {
 						if utils.IsinSet(ev.Type, utils.Unblocks) {
+							flag = false
 							break
 						}
 					}
-					settings.Block = settings.TargetEventKind
+					if flag {
+						settings.Block = settings.TargetEventKind
+					}
 				}
 			}
 		case 1102:
 			{
-				_, timer = partTimer(events[i+1:], bcTimeToTimestamp(event.RegTime), settings)
-				if timer < settings.HalfDuration*int64(*event.I1)-120 {
+				part, timer = partTimer(events[i+1:], bcTimeToTimestamp(event.RegTime), settings)
+				if timer < settings.PartTimes[part.Nmb].End-120 {
 					excludeMap[i] = true
+					flag := true
 					for _, ev := range events[:i] {
 						if utils.IsinSet(ev.Type, utils.Unblocks) {
 							break
 						}
 					}
-					settings.Block = settings.TargetEventKind
+					if flag {
+						settings.Block = settings.TargetEventKind
+					}
 				}
 			}
 		}
@@ -96,4 +104,29 @@ func bcExcludeMistakes(events []EventStruct, settings SettingsStruct) ([]EventSt
 	}
 
 	return result, settings
+}
+
+func moveUp1102(events []EventStruct) []EventStruct {
+
+	// Находим индекс первого события таймера первого тайма
+	var timerIdx int = len(events)
+	for i, ev := range events {
+		if utils.IsinSet(ev.Type, utils.BcTimer) && *ev.I2 == 1 {
+			timerIdx = i
+			break
+		}
+	}
+
+	// Ищем событие 1102 первого тайма после найденного индекса
+	for i := timerIdx; i < len(events); i++ {
+		if events[i].Type == 1102 && *events[i].I1 == 1 {
+			// Удаляем и вставляем на новую позицию
+			ev := events[i]
+			events = append(events[:i], events[i+1:]...)
+			events = append(events[:timerIdx], append([]EventStruct{ev}, events[timerIdx:]...)...)
+			break
+		}
+	}
+
+	return events
 }

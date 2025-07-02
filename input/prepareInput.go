@@ -11,7 +11,8 @@ func PrepareInputFun(path string) []EventStruct {
 	Settings := parsingSettingsFun(request)                // parse settings
 	events := parsingEventsFun(request)                    // parse events
 	events = bcExcludeEvents(events)                       // exclude 1020 and statistics
-	events, Settings = bcExcludeMistakes(events, Settings) //exclude ends 1102 and 1103 with mistakes
+	events, Settings = bcExcludeMistakes(events, Settings) // exclude ends 1102 and 1103 with mistakes
+	events = moveUp1102(events)
 
 	fmt.Println(partTimer(events, Settings.ServerTime, Settings))
 	fmt.Println(Settings)

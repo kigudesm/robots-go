@@ -62,14 +62,15 @@ func parsingEventsFun(request map[string]any) []EventStruct {
 
 // Настройки матча
 type SettingsStruct struct {
-	MatchType          string   // Тип матча (обычный, товарищеский, 2 по 40 и т.п.)
-	EventGameTypeIdent string   // Тип матча (с добаленным временем, серией пенальти и т.п.)
-	HalfDuration       int64    // Длительность тайма
-	MatchDuration      int64    // Длительность матча
-	InjuryDefault      [2]int   // Компенсированное время по умолчанию
-	ServerTime         int64    // Время сервера
-	TargetEventKind    []string // Целевые рынки
-	Block              []string // Заблокированные eventKind
+	MatchType          string               // Тип матча (обычный, товарищеский, 2 по 40 и т.п.)
+	EventGameTypeIdent string               // Тип матча (с добаленным временем, серией пенальти и т.п.)
+	HalfDuration       int64                // Длительность тайма
+	MatchDuration      int64                // Длительность матча
+	PartTimes          map[int]PartBeginEnd // Начало и конец таймов
+	InjuryDefault      [2]int               // Компенсированное время по умолчанию
+	ServerTime         int64                // Время сервера
+	TargetEventKind    []string             // Целевые рынки
+	Block              []string             // Заблокированные eventKind
 }
 
 func parsingSettingsFun(request map[string]any) SettingsStruct {
@@ -107,6 +108,13 @@ func parsingSettingsFun(request map[string]any) SettingsStruct {
 	settings.EventGameTypeIdent = eGTI
 	settings.HalfDuration = int64(matchType.HalfDuration)
 	settings.MatchDuration = 2 * int64(matchType.HalfDuration)
+	settings.PartTimes = map[int]PartBeginEnd{
+		1: {Begin: 0, End: settings.HalfDuration},
+		2: {Begin: settings.HalfDuration, End: settings.MatchDuration},
+		3: {Begin: settings.MatchDuration, End: settings.MatchDuration + 900},
+		4: {Begin: settings.MatchDuration + 900, End: settings.MatchDuration + 1800},
+		5: {Begin: settings.MatchDuration + 1800, End: settings.MatchDuration + 1800},
+	}
 	settings.InjuryDefault[0] = matchType.TFirstHalf - matchType.HalfDuration
 	settings.InjuryDefault[1] = matchType.TSecondHalf - matchType.HalfDuration
 	settings.ServerTime = num / 1000

@@ -12,6 +12,12 @@ type Part struct {
 	// Если игра не идет: 0 матч не начался,  i перерыв после i-ого тайма, -1 матч закончился)
 }
 
+// Начало конец таймов
+type PartBeginEnd struct {
+	Begin int64
+	End   int64
+}
+
 func bcTimeToTimestamp(regtime string) int64 {
 	t, _ := time.Parse("02.01.2006 15:04:05", regtime)
 	return t.Unix()
@@ -23,8 +29,8 @@ func partTimer(events []EventStruct, timestamp int64, settings SettingsStruct) (
 	var timer int64
 	for i, event := range events {
 		switch {
-		case utils.IsinSet(event.Type, utils.BcTimer):
-			{ // Первое подходящее событие из BcTimer
+		case utils.IsinSet(event.Type, utils.BcTimer): // Событие из BcTimer
+			{
 				part.IsGoing = true
 				part.Nmb = *event.I2
 				regtime := bcTimeToTimestamp(event.RegTime)
@@ -42,33 +48,22 @@ func partTimer(events []EventStruct, timestamp int64, settings SettingsStruct) (
 				}
 				return part, max(timer, timerOld)
 			}
-		case event.Type == 1105:
-			{ // Первое подходящее событие - начало матча
+		case event.Type == 1105: // Начало матча
+			{
 				part.IsGoing = true
 				part.Nmb = 1
 				regtime := bcTimeToTimestamp(event.RegTime)
 				return part, timestamp - regtime
 			}
-		case event.Type == 1118:
-			{ // Первое подходящее событие - начало тайма
+		case event.Type == 1118: // Начало тайма
+			{
 				part.IsGoing = true
 				part.Nmb = *event.I1
 				regtime := bcTimeToTimestamp(event.RegTime)
-				switch part.Nmb {
-				case 1:
-					return part, timestamp - regtime
-				case 2:
-					return part, settings.HalfDuration + timestamp - regtime
-				case 3:
-					return part, settings.MatchDuration + timestamp - regtime
-				case 4:
-					return part, settings.MatchDuration + 900 + timestamp - regtime
-				case 5:
-					return part, settings.MatchDuration + 1800
-				}
+				return part, settings.PartTimes[part.Nmb].Begin + timestamp - regtime
 			}
-		case event.Type == 1103:
-			{ // Первое подходящее событие - окончание матча
+		case event.Type == 1103: // Окончание матча
+			{
 				part.IsGoing = false
 				if settings.EventGameTypeIdent == "regular" {
 					part.Nmb = -1
@@ -78,29 +73,14 @@ func partTimer(events []EventStruct, timestamp int64, settings SettingsStruct) (
 					return part, settings.MatchDuration
 				}
 			}
-		case event.Type == 1102:
-			{ // Первое подходящее событие - конец игрового отрезка
+		case event.Type == 1102: // Конец тайма
+			{
 				part.IsGoing = false
 				part.Nmb = *event.I1
-				switch part.Nmb {
-				case 1:
-					return part, settings.HalfDuration
-				case 2:
-					if settings.EventGameTypeIdent == "regular" {
-						part.Nmb = -1
-						return part, settings.MatchDuration
-					} else {
-						part.Nmb = 2
-						return part, settings.MatchDuration
-					}
-				case 3:
-					return part, settings.MatchDuration + 900
-				case 4:
-					return part, settings.MatchDuration + 1800
-				case 5:
+				if (part.Nmb == 2 && settings.EventGameTypeIdent == "regular") || (part.Nmb == 5) {
 					part.Nmb = -1
-					return part, settings.MatchDuration + 1800
 				}
+				return part, settings.PartTimes[*event.I1].End
 			}
 		}
 	}
