@@ -2,24 +2,12 @@ package input
 
 import (
 	"math"
-	"robots-go/utils"
+	"robots-go/constants"
+	"robots-go/structures"
 	"sort"
 )
 
-var BCStatistics = map[int]struct{}{
-	1006: {}, 1052: {}, 1145: {}, 1171: {}, 1172: {}, 1173: {}, 1621: {}, 1200: {}, 1201: {}, 1202: {},
-	1203: {}, 1204: {}, 1205: {}, 1206: {}, 1207: {}, 1208: {}, 1209: {}, 1210: {}, 1211: {}, 1212: {},
-	1213: {}, 1214: {}, 1215: {}, 1216: {}, 1217: {}, 1218: {}, 1219: {}, 1220: {}, 1221: {}, 1222: {},
-	1224: {}, 1225: {}, 1226: {}, 1227: {}, 1233: {}, 1250: {}, 1251: {}, 1411: {}, 1418: {}, 1538: {},
-	1550: {}, 1551: {}, 1552: {}, 1554: {}, 1560: {}, 1561: {}, 1564: {}, 1565: {}, 1576: {}, 1586: {},
-	1597: {}, 1620: {}, 1622: {}, 1720: {}, 1721: {}, 1857: {}, 1853: {}, 1854: {}, 1855: {}, 1858: {},
-	2001: {}, 2002: {}, 2003: {}, 2011: {}, 2021: {}, 2022: {}, 2031: {}, 2041: {}, 2061: {}, 2062: {},
-	2063: {}, 2064: {}, 2065: {}, 2066: {}, 2067: {}, 2681: {}, 2682: {}, 3020: {}, 3021: {}, 3100: {},
-	3101: {}, 3102: {}, 3103: {}, 3105: {}, 3201: {}, 1813: {}, 1859: {}, 1863: {}, 2070: {}, 1477: {},
-	1867: {}, 1242: {}, 1866: {}, 1161: {}, 3104: {},
-}
-
-func bcExcludeEvents(events []EventStruct) []EventStruct {
+func bcExcludeEvents(events []structures.EventStruct) []structures.EventStruct {
 	// Создаем map для исключаемых ID (используем map для быстрого поиска)
 	excludeMap := make(map[int64]bool)
 
@@ -35,10 +23,10 @@ func bcExcludeEvents(events []EventStruct) []EventStruct {
 	}
 
 	// Фильтруем исходный слайс
-	var result []EventStruct
+	var result []structures.EventStruct
 	for _, ev := range events {
 		// Исключаем события типа 1020 и в BCStatistics и те, чьи ID есть в excludeMap
-		if ev.Type != 1020 && !excludeMap[ev.ID] && !utils.IsinSet(ev.Type, BCStatistics) {
+		if _, ok := constants.BcStatistics[ev.Type]; !ok && ev.Type != 1020 && !excludeMap[ev.ID] {
 			result = append(result, ev)
 		}
 	}
@@ -52,10 +40,11 @@ func bcExcludeEvents(events []EventStruct) []EventStruct {
 }
 
 // Исключение из трансляции ошибочных событий 1102 и 1103
-func bcExcludeMistakes(events []EventStruct, settings SettingsStruct) ([]EventStruct, SettingsStruct) {
+func bcExcludeMistakes(events []structures.EventStruct, settings structures.SettingsStruct) (
+	[]structures.EventStruct, structures.SettingsStruct) {
 
 	var timer int64
-	var part Part
+	var part structures.Part
 	excludeMap := make(map[int]bool)
 
 	for i, event := range events {
@@ -67,7 +56,7 @@ func bcExcludeMistakes(events []EventStruct, settings SettingsStruct) ([]EventSt
 					excludeMap[i] = true
 					flag := true
 					for _, ev := range events[:i] {
-						if utils.IsinSet(ev.Type, utils.Unblocks) {
+						if _, ok := constants.Unblocks[ev.Type]; ok {
 							flag = false
 							break
 						}
@@ -84,7 +73,8 @@ func bcExcludeMistakes(events []EventStruct, settings SettingsStruct) ([]EventSt
 					excludeMap[i] = true
 					flag := true
 					for _, ev := range events[:i] {
-						if utils.IsinSet(ev.Type, utils.Unblocks) {
+						if _, ok := constants.Unblocks[ev.Type]; ok {
+							flag = false
 							break
 						}
 					}
@@ -96,7 +86,7 @@ func bcExcludeMistakes(events []EventStruct, settings SettingsStruct) ([]EventSt
 		}
 	}
 
-	var result []EventStruct
+	var result []structures.EventStruct
 	for i, v := range events {
 		if !excludeMap[i] {
 			result = append(result, v)
@@ -106,12 +96,12 @@ func bcExcludeMistakes(events []EventStruct, settings SettingsStruct) ([]EventSt
 	return result, settings
 }
 
-func moveUp1102(events []EventStruct) []EventStruct {
+func moveUp1102(events []structures.EventStruct) []structures.EventStruct {
 
 	// Находим индекс первого события таймера первого тайма
 	var timerIdx int = len(events)
 	for i, ev := range events {
-		if utils.IsinSet(ev.Type, utils.BcTimer) && *ev.I2 == 1 {
+		if _, ok := constants.BcTimer[ev.Type]; ok && *ev.I2 == 1 {
 			timerIdx = i
 			break
 		}
@@ -123,7 +113,7 @@ func moveUp1102(events []EventStruct) []EventStruct {
 			// Удаляем и вставляем на новую позицию
 			ev := events[i]
 			events = append(events[:i], events[i+1:]...)
-			events = append(events[:timerIdx], append([]EventStruct{ev}, events[timerIdx:]...)...)
+			events = append(events[:timerIdx], append([]structures.EventStruct{ev}, events[timerIdx:]...)...)
 			break
 		}
 	}
@@ -131,9 +121,9 @@ func moveUp1102(events []EventStruct) []EventStruct {
 	return events
 }
 
-func bcReverse(events []EventStruct) []EventStruct {
+func bcReverse(events []structures.EventStruct) []structures.EventStruct {
 	for _, event := range events {
-		if value, ok := eventsWithTeam[event.Type]; ok {
+		if value, ok := constants.EventsWithTeam[event.Type]; ok {
 			switch value {
 			case "i1":
 				{
@@ -161,7 +151,8 @@ func bcReverse(events []EventStruct) []EventStruct {
 	return events
 }
 
-func bcTransformation(request map[string]any, settings SettingsStruct) ([]EventStruct, SettingsStruct) {
+func bcTransformation(request map[string]any, settings structures.SettingsStruct) (
+	[]structures.EventStruct, structures.SettingsStruct) {
 	events := parsingEventsFun(request)                    // parse events
 	events = bcExcludeEvents(events)                       // exclude 1020 and statistics
 	events, settings = bcExcludeMistakes(events, settings) // exclude ends 1102 and 1103 with mistakes

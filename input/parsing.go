@@ -2,25 +2,13 @@ package input
 
 import (
 	"robots-go/gametypes"
+	"robots-go/structures"
 	"strconv"
 )
 
-// Трансляция
-type EventStruct struct {
-	ID      int64  // id события
-	RegTime string // время
-	Type    int    // тип
-	// Параметры события (могут отсутствовать)
-	I1 *int
-	I2 *int
-	I3 *int
-	I4 *int
-	I5 *int
-}
+func convertEventToStruct(ev map[string]any) structures.EventStruct {
 
-func convertEventToStruct(ev map[string]any) EventStruct {
-
-	var event EventStruct
+	var event structures.EventStruct
 
 	// Обязательные поля
 	event.ID = int64(ev["id"].(float64))
@@ -56,11 +44,11 @@ func convertEventToStruct(ev map[string]any) EventStruct {
 	return event
 }
 
-func parsingEventsFun(request map[string]any) []EventStruct {
+func parsingEventsFun(request map[string]any) []structures.EventStruct {
 
 	evs := request["events"].([]any)
 
-	var events []EventStruct
+	var events []structures.EventStruct
 
 	for _, item := range evs {
 		if ev, ok := item.(map[string]any); ok {
@@ -69,24 +57,9 @@ func parsingEventsFun(request map[string]any) []EventStruct {
 	}
 
 	return events
-
 }
 
-// Настройки матча
-type SettingsStruct struct {
-	MatchType              string               // Тип матча (обычный, товарищеский, 2 по 40 и т.п.)
-	EventGameTypeIdent     string               // Тип матча (с добаленным временем, серией пенальти и т.п.)
-	HalfDuration           int64                // Длительность тайма
-	MatchDuration          int64                // Длительность матча
-	PartTimes              map[int]PartBeginEnd // Начало и конец таймов
-	SportscastReverseTeams bool                 // реверсивная трансляция
-	InjuryDefault          [2]int               // Компенсированное время по умолчанию
-	ServerTime             int64                // Время сервера
-	TargetEventKind        []string             // Целевые рынки
-	Block                  []string             // Заблокированные eventKind
-}
-
-func parsingSettingsFun(request map[string]any) SettingsStruct {
+func parsingSettingsFun(request map[string]any) structures.SettingsStruct {
 
 	set := request["settings"].(map[string]any)
 
@@ -115,13 +88,13 @@ func parsingSettingsFun(request map[string]any) SettingsStruct {
 	num, _ := strconv.ParseInt(set["serverTime"].(string), 10, 64)
 
 	// Заполняем Settings
-	var settings SettingsStruct
+	var settings structures.SettingsStruct
 	settings.TargetEventKind = targetEventKind
 	settings.MatchType = ident
 	settings.EventGameTypeIdent = eGTI
 	settings.HalfDuration = int64(matchType.HalfDuration)
 	settings.MatchDuration = 2 * int64(matchType.HalfDuration)
-	settings.PartTimes = map[int]PartBeginEnd{
+	settings.PartTimes = map[int]structures.PartBeginEnd{
 		1: {Begin: 0, End: settings.HalfDuration},
 		2: {Begin: settings.HalfDuration, End: settings.MatchDuration},
 		3: {Begin: settings.MatchDuration, End: settings.MatchDuration + 900},

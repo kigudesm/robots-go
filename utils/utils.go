@@ -1,10 +1,5 @@
 package utils
 
-func IsinSet(item int, set map[int]struct{}) bool {
-	_, exists := set[item]
-	return exists
-}
-
 // Ordered ограничивающий тип для чисел и строк
 type Ordered interface {
 	~int | ~int32 | ~int64 | ~float32 | ~float64 | ~string
