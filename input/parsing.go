@@ -1,6 +1,8 @@
 package input
 
 import (
+	"math"
+	"robots-go/constants"
 	"robots-go/gametypes"
 	"robots-go/structures"
 	"strconv"
@@ -59,39 +61,53 @@ func parsingEventsFun(request map[string]any) []structures.EventStruct {
 	return events
 }
 
+func getProviders(set map[string]any) map[string]string {
+	result := make(map[string]string)
+	pEKs, _ := set["betScannerSourcesSettingsByEventKinds"].([]any)
+	for _, item := range pEKs {
+		peK, _ := item.(map[string]any)
+		if eK, ok := peK["eventKindId"]; ok {
+			if sourceSet, ok := peK["sourcesSettings"]; ok {
+				source, _ := sourceSet.([]any)
+				weigth := 0
+				for _, provider := range source {
+					pr, _ := provider.(map[string]any)
+					w := int(pr["weight"].(float64))
+					if w > weigth {
+						weigth = w
+						result[eK.(string)] = pr["providerLayerId"].(string)
+					}
+				}
+			}
+		}
+	}
+	return result
+}
+
 func parsingSettingsFun(request map[string]any) structures.SettingsStruct {
 
 	set := request["settings"].(map[string]any)
+	var settings structures.SettingsStruct
 
 	// Парсим targetEventKind
 	tek := set["targetEventKind"].([]any)
 	var targetEventKind []string
 	for _, item := range tek {
 		if ek, ok := item.(string); ok {
-			targetEventKind = append(targetEventKind, ek)
+			// Убираем необрабатываемые targetEventKind
+			if _, ok := constants.EventKinds[ek]; ok {
+				targetEventKind = append(targetEventKind, ek)
+			}
 		}
 	}
-
-	// Парсим ident
-	ident, _ := set["sportRules"].(map[string]any)["object"].(map[string]any)["ident"].(string)
-	matchType := gametypes.MatchTypes[ident]
-
-	// Парсим EventGameTypeIdent
-	var eGTI string
-	if set["eventGameTypeIdent"] == nil {
-		eGTI = "regular"
-	} else {
-		eGTI = set["eventGameTypeIdent"].(string)
-	}
-
-	//Парсим serverTime
-	num, _ := strconv.ParseInt(set["serverTime"].(string), 10, 64)
-
-	// Заполняем Settings
-	var settings structures.SettingsStruct
 	settings.TargetEventKind = targetEventKind
+
+	// Парсим ident - продолжительность таймов, товарищеский или нет
+	ident, _ := set["sportRules"].(map[string]any)["object"].(map[string]any)["ident"].(string)
 	settings.MatchType = ident
-	settings.EventGameTypeIdent = eGTI
+
+	// Продолжительности матча, и времена начала и окончания таймов, компенсированное время
+	matchType := gametypes.MatchTypes[ident]
 	settings.HalfDuration = int64(matchType.HalfDuration)
 	settings.MatchDuration = 2 * int64(matchType.HalfDuration)
 	settings.PartTimes = map[int]structures.PartBeginEnd{
@@ -101,10 +117,36 @@ func parsingSettingsFun(request map[string]any) structures.SettingsStruct {
 		4: {Begin: settings.MatchDuration + 900, End: settings.MatchDuration + 1800},
 		5: {Begin: settings.MatchDuration + 1800, End: settings.MatchDuration + 1800},
 	}
-	settings.SportscastReverseTeams = set["sportscastReverseTeams"].(bool)
 	settings.InjuryDefault[0] = matchType.TFirstHalf - matchType.HalfDuration
 	settings.InjuryDefault[1] = matchType.TSecondHalf - matchType.HalfDuration
+
+	// Парсим EventGameTypeIdent - обычный или с добавочным временем и пенальти
+	var eGTI string
+	if set["eventGameTypeIdent"] == nil {
+		eGTI = "regular"
+	} else {
+		eGTI = set["eventGameTypeIdent"].(string)
+	}
+	settings.EventGameTypeIdent = eGTI
+
+	// Парсим условие реверсности трансляции
+	settings.SportscastReverseTeams = set["sportscastReverseTeams"].(bool)
+
+	// Серверное время
+	num, _ := strconv.ParseInt(set["serverTime"].(string), 10, 64)
 	settings.ServerTime = num / 1000
+
+	// Время начала матча
+	num, _ = strconv.ParseInt(set["startTime"].(string), 10, 64)
+	settings.StartTime = num / 1000
+
+	// Переводим в вероятность число из switchToTwoWayBetsProbability
+	prStr, _ := set["autoLiveScheme"].(map[string]any)["object"].(map[string]any)["switchToTwoWayBetsProbability"].(string)
+	pr, _ := strconv.ParseFloat(prStr, 64)
+	settings.SwitchToTwoWayBetsProbability = pr * math.Pow10(-8)
+
+	// Находим провайдеров по каждому eventKind
+	settings.Providers = getProviders(set)
 
 	return settings
 }
