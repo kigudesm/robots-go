@@ -44,7 +44,7 @@ func bcExcludeMistakes(events []structures.EventStruct, settings structures.Sett
 	[]structures.EventStruct, structures.SettingsStruct) {
 
 	var timer int64
-	var part structures.Part
+	var part structures.PartStruct
 	excludeMap := make(map[int]bool)
 
 	for i, event := range events {

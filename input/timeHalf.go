@@ -19,8 +19,8 @@ func bcTimeToTimestamp(regtime string) int64 {
 }
 
 // Вычисление Part и Timer
-func partTimer(events []structures.EventStruct, timestamp int64, settings structures.SettingsStruct) (structures.Part, int64) {
-	var part structures.Part
+func partTimer(events []structures.EventStruct, timestamp int64, settings structures.SettingsStruct) (structures.PartStruct, int64) {
+	var part structures.PartStruct
 	var timer int64
 	for i, event := range events {
 		if _, ok := constants.BcTimer[event.Type]; ok { // Событие из BcTimer
