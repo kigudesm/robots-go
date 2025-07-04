@@ -151,12 +151,26 @@ func bcReverse(events []structures.EventStruct) []structures.EventStruct {
 	return events
 }
 
+func bcGetInjury(events []structures.EventStruct, settings structures.SettingsStruct) structures.SettingsStruct {
+	settings.Injury = settings.InjuryDefault
+	for i := range 2 {
+		for _, event := range events {
+			if event.Type == 1104 && *event.I1 != 0 && *event.I2 == i+1 {
+				settings.Injury[i] = *event.I1 * 60
+				break
+			}
+		}
+	}
+	return settings
+}
+
 func bcTransformation(request map[string]any, settings structures.SettingsStruct) (
 	[]structures.EventStruct, structures.SettingsStruct) {
 	events := parsingEventsFun(request)                    // parse events
 	events = bcExcludeEvents(events)                       // exclude 1020 and statistics
 	events, settings = bcExcludeMistakes(events, settings) // exclude ends 1102 and 1103 with mistakes
 	events = moveUp1102(events)                            // move up 1102 if mistake
+	settings = bcGetInjury(events, settings)               // get injury
 	if settings.SportscastReverseTeams {                   //reverse broadcast if SportscastReverseTeams == true
 		events = bcReverse(events)
 	}
