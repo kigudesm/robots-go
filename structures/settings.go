@@ -16,10 +16,9 @@ type SettingsStruct struct {
 	PartTimes                     map[int]PartBeginEnd // Начало и конец таймов
 	SportscastReverseTeams        bool                 // реверсивная трансляция
 	InjuryDefault                 [2]int               // Компенсированное время по умолчанию
-	Injury                        [2]int               // Компенсированное время фактическое
 	ServerTime                    int64                // Время сервера в формате timestamp
 	StartTime                     int64                // Время начала матча в формате timestamp
 	TargetEventKind               []string             // Целевые рынки
 	Providers                     map[string]string    // Провайдеры для каждого eventKind
-	Block                         []string             // Заблокированные eventKind
+	BlockAll                      bool                 // Блокировка всех ставок
 }
