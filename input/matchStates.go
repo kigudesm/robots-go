@@ -27,34 +27,64 @@ func cutEvents(events []structures.EventStruct, timestamp int64) []structures.Ev
 	return events[:0]
 }
 
-func onlyMatch(eventKinds []string) []string {
-	return eventKinds
-}
+// func onlyMatch(eventKinds []string) []string {
+// 	return eventKinds
+// }
 
-func getActiveEventKind(settings structures.SettingsStruct, matchState structures.MatchStateCurrentStruct) []string {
+func isLiveFun(settings structures.SettingsStruct, matchState structures.MatchStateCurrentStruct,
+	events []structures.EventStruct) map[string]bool {
 
-	result := settings.TargetEventKind
-	switch {
-	case matchState.Part.Nmb == -1:
-		{
-			result = result[:0]
-		}
-	case matchState.Timer >= settings.MatchDuration+int64(matchState.Injury[1]):
-		{
-			result = result[:0]
-		}
-	case matchState.Part.IsGoing && matchState.Part.Nmb == 1 &&
-		matchState.Timer >= settings.HalfDuration+int64(matchState.Injury[0]):
-		{
-			res := make([]string, 0)
-			for _, eK := range result {
-				name := constants.EventKinds[eK].Name
-				if name == "match" {
-					res = append(res, eK)
+	result := make(map[string]bool)
+	for _, eK := range settings.TargetEventKind {
+		result[eK] = true
+	}
+
+	if matchState.Timestamp < settings.StartTime { // Блокировка до начала матча
+		return make(map[string]bool)
+	}
+
+	if matchState.Part.Nmb == -1 { // Блокировка через 15 сек. после окончания матча
+		for _, event := range events {
+			if (event.Type == 1103) || (event.Type == 1102) {
+				if matchState.Timestamp > bcTimeToTimestamp(event.RegTime)+15 {
+					return make(map[string]bool)
 				}
 			}
-			result = res
 		}
+	}
+
+	for _, eK := range settings.TargetEventKind { // Блокировка таймов, после окончания первого тайма
+		if constants.EventKinds[eK].Name != "match" {
+			if !(matchState.Part.Nmb == 0 || (matchState.Part.IsGoing && matchState.Part.Nmb == 1)) {
+				result[eK] = false
+			}
+		}
+	}
+
+	if settings.FollowProviderCancels { // Следование за снятиями провайдера
+		for _, eK := range settings.TargetEventKind {
+			if settings.Providers[eK].MatchClosed {
+				result[eK] = false
+			}
+		}
+	}
+
+	return result
+}
+
+func getActiveEventKind(settings structures.SettingsStruct, matchState structures.MatchStateCurrentStruct,
+	events []structures.EventStruct) map[string]structures.EventKindsActive {
+
+	// Объявляем мапу с указателями на структуры
+	result := make(map[string]structures.EventKindsActive)
+	isLiveSet := isLiveFun(settings, matchState, events)
+
+	for _, eK := range settings.TargetEventKind {
+		tmp := result[eK]
+		tmp.IsLive = isLiveSet[eK]
+		tmp.IsActive = true
+		tmp.IsBlocked = true
+		result[eK] = tmp
 	}
 	return result
 }
@@ -65,10 +95,10 @@ func createMatchStateCurrent(
 	var matchState structures.MatchStateCurrentStruct
 
 	matchState.Timestamp = settings.ServerTime
-	// matchState.Events = cutEvents(events, matchState.Timestamp)
+	events = cutEvents(events, matchState.Timestamp)
 	matchState.Part, matchState.Timer = partTimer(events, settings.ServerTime, settings)
 	matchState.Injury = bcGetInjury(events, settings)
-	matchState.ActiveEventKinds = getActiveEventKind(settings, matchState)
+	matchState.EventKinds = getActiveEventKind(settings, matchState, events)
 
 	return matchState
 }

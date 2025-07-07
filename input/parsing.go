@@ -61,25 +61,32 @@ func parsingEventsFun(request map[string]any) []structures.EventStruct {
 	return events
 }
 
-func getProviders(set map[string]any) map[string]string {
-	result := make(map[string]string)
+func getProviders(set map[string]any) map[string]structures.ProviderStruct {
+	result := make(map[string]structures.ProviderStruct)
 	pEKs, _ := set["betScannerSourcesSettingsByEventKinds"].([]any)
 	for _, item := range pEKs {
 		peK, _ := item.(map[string]any)
-		if eK, ok := peK["eventKindId"]; ok {
-			if sourceSet, ok := peK["sourcesSettings"]; ok {
-				source, _ := sourceSet.([]any)
-				weigth := 0
-				for _, provider := range source {
-					pr, _ := provider.(map[string]any)
-					w := int(pr["weight"].(float64))
-					if w > weigth {
-						weigth = w
-						result[eK.(string)] = pr["providerLayerId"].(string)
-					}
-				}
+		eK := peK["eventKindId"].(string)
+		source := peK["sourcesSettings"].([]any)
+		weigth := 0
+		tmp := result[eK]
+		for _, provider := range source {
+			pr, _ := provider.(map[string]any)
+			w := int(pr["weight"].(float64))
+			if w > weigth {
+				weigth = w
+				tmp.ID = pr["providerLayerId"].(string)
 			}
 		}
+		sourcesData := set["betScannerSourcesData"].([]any)
+		for _, sources := range sourcesData {
+			elem := sources.(map[string]any)
+			id := elem["providerLayerId"].(string)
+			if tmp.ID == id {
+				tmp.MatchClosed = elem["matchClosed"].(bool)
+			}
+		}
+		result[eK] = tmp
 	}
 	return result
 }
@@ -103,7 +110,7 @@ func parsingSettingsFun(request map[string]any) structures.SettingsStruct {
 	settings.TargetEventKind = targetEventKind
 
 	// Парсим ident - продолжительность таймов, товарищеский или нет
-	ident, _ := set["sportRules"].(map[string]any)["object"].(map[string]any)["ident"].(string)
+	ident := set["sportRules"].(map[string]any)["object"].(map[string]any)["ident"].(string)
 	settings.MatchType = ident
 
 	// Продолжительности матча, и времена начала и окончания таймов, компенсированное время
@@ -141,9 +148,12 @@ func parsingSettingsFun(request map[string]any) structures.SettingsStruct {
 	settings.StartTime = num / 1000
 
 	// Переводим в вероятность число из switchToTwoWayBetsProbability
-	prStr, _ := set["autoLiveScheme"].(map[string]any)["object"].(map[string]any)["switchToTwoWayBetsProbability"].(string)
+	prStr := set["autoLiveScheme"].(map[string]any)["object"].(map[string]any)["switchToTwoWayBetsProbability"].(string)
 	pr, _ := strconv.ParseFloat(prStr, 64)
 	settings.SwitchToTwoWayBetsProbability = pr * math.Pow10(-8)
+
+	// Следование за снятиями провайдера
+	settings.FollowProviderCancels = set["autoLiveScheme"].(map[string]any)["object"].(map[string]any)["followProviderCancels"].(bool)
 
 	// Находим провайдеров по каждому eventKind
 	settings.Providers = getProviders(set)
