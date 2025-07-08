@@ -8,9 +8,10 @@ type PartStruct struct {
 }
 
 type EventKindsActive struct {
-	IsLive    bool // Нужно показывать на сайте
-	IsActive  bool // Нужно вычислять парамтеры оптимизации
-	IsBlocked bool // В блоке
+	BPID      string // Id опорной точки по которой будем считать
+	IsLive    bool   // Нужно показывать на сайте
+	IsActive  bool   // Нужно вычислять парамтеры оптимизации
+	IsBlocked bool   // В блоке
 }
 
 // Текущее состояние матча

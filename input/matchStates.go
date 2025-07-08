@@ -27,10 +27,6 @@ func cutEvents(events []structures.EventStruct, timestamp int64) []structures.Ev
 	return events[:0]
 }
 
-// func onlyMatch(eventKinds []string) []string {
-// 	return eventKinds
-// }
-
 func isLiveFun(settings structures.SettingsStruct, matchState structures.MatchStateCurrentStruct,
 	events []structures.EventStruct) map[string]bool {
 
@@ -72,6 +68,10 @@ func isLiveFun(settings structures.SettingsStruct, matchState structures.MatchSt
 	return result
 }
 
+func bPIDFun(eK string, settings structures.SettingsStruct) string {
+	return "0"
+}
+
 func getActiveEventKind(settings structures.SettingsStruct, matchState structures.MatchStateCurrentStruct,
 	events []structures.EventStruct) map[string]structures.EventKindsActive {
 
@@ -81,6 +81,7 @@ func getActiveEventKind(settings structures.SettingsStruct, matchState structure
 
 	for _, eK := range settings.TargetEventKind {
 		tmp := result[eK]
+		tmp.BPID = bPIDFun(eK, settings)
 		tmp.IsLive = isLiveSet[eK]
 		tmp.IsActive = true
 		tmp.IsBlocked = true
