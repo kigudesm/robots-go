@@ -26,3 +26,11 @@ var EventKinds = map[string]struct {
 	"401100":   {"match", "goal kicks"},
 	"11100201": {"first", "goal kicks"},
 }
+
+var EventKindKeys = func() map[string]bool {
+	keys := make(map[string]bool)
+	for key := range EventKinds {
+		keys[key] = true
+	}
+	return keys
+}()

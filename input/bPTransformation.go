@@ -5,17 +5,24 @@ import (
 	"strconv"
 )
 
-// func confertFactorsToStruct(ff []any) []structures.Factor {
-// 	var factors []structures.Factor
-// 	for _, f := range ff {
-// 		ft := f.(map[string]any)
-// 		var factor structures.Factor
-// 		factor.FactorID = ft["f"].(string)
-// 		factor.Value = ft["v"]
-// 		factors = append(factors, factor)
-// 	}
-// 	return factors
-// }
+func confertFactorsToStruct(ff []any) []structures.Factor {
+	var factors []structures.Factor
+	for _, f := range ff {
+		ft := f.(map[string]any)
+
+		var factor structures.Factor
+		factor.ID = ft["f"].(string)
+		num, _ := strconv.ParseFloat(ft["v"].(string), 64)
+		factor.Value = num / 1000
+		if p, ok := ft["p"].(float64); ok {
+			val := p / 1000
+			factor.Parameter = &val
+		}
+		factor.Disabled = ft["disabled"].(bool)
+		factors = append(factors, factor)
+	}
+	return factors
+}
 
 func filterBPs(bPs []structures.BasePointStruct, settings structures.SettingsStruct) []structures.BasePointStruct {
 
@@ -50,7 +57,7 @@ func convertBPToStruct(bP any) structures.BasePointStruct {
 	basePoint.TimeStamp = num / 1000
 	basePoint.ScoreC1 = int(baseP["scoreC1"].(float64))
 	basePoint.ScoreC2 = int(baseP["scoreC2"].(float64))
-	// basePoint.Factors = confertFactorsToStruct(baseP["factors"].([]any))
+	basePoint.Factors = confertFactorsToStruct(baseP["factors"].([]any))
 
 	return basePoint
 }
@@ -66,7 +73,7 @@ func bPTransformation(request map[string]any, settings structures.SettingsStruct
 		basePoints = append(basePoints, convertBPToStruct(bP))
 	}
 
-	// Фильтрация
+	// Фильтрация по провайдерам и максимуму timestamp
 	basePoints = filterBPs(basePoints, settings)
 
 	return basePoints

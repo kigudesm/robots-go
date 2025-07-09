@@ -12,3 +12,10 @@ type EventStruct struct {
 	I4 *int
 	I5 *int
 }
+
+// Описывает конфигурацию блокировки
+type BlockConfig struct {
+	Description string
+	Block       map[string]bool  // Множество блокируемых событий от сканера
+	Cancel      map[int]struct{} // Множество отменяющих событий трансляции
+}

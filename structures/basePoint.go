@@ -1,9 +1,10 @@
 package structures
 
 type Factor struct {
-	FactorID string
-	Value    string
-	Disabled bool
+	ID        string
+	Value     float64
+	Parameter *float64
+	Disabled  bool
 }
 
 type BasePointStruct struct {

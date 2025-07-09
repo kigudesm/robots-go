@@ -1,5 +1,9 @@
 package constants
 
+import (
+	"robots-go/structures"
+)
+
 var Unblocks = map[int]struct{}{
 	1100: {}, 1101: {}, 1102: {}, 1103: {}, 1113: {}, 1115: {}, 1118: {}, 1164: {}, 1168: {}, 1196: {},
 	1421: {},
@@ -83,4 +87,88 @@ var EventsWithTeam = map[int]string{
 	3443: "i1", 3444: "i1", 1744: "i3", 3445: "i1", 3446: "i1", 3447: "i1",
 	3448: "i1", 3449: "i1", 3436: "i1", 3437: "i1", 3415: "i1", 3416: "i1",
 	1161: "i1",
+}
+
+// Создает множество map[int]struct{} из среза чисел
+func createSetStruct(items []int) map[int]struct{} {
+	set := make(map[int]struct{})
+	for _, item := range items {
+		set[item] = struct{}{}
+	}
+	return set
+}
+
+// Создает множество map[string]bool из среза чисел
+func createSetBool(items []string) map[string]bool {
+	set := make(map[string]bool)
+	for _, item := range items {
+		set[item] = true
+	}
+	return set
+}
+
+// Объединяет два множества
+func unionSets(a, b map[int]struct{}) map[int]struct{} {
+	result := make(map[int]struct{})
+	for k := range a {
+		result[k] = struct{}{}
+	}
+	for k := range b {
+		result[k] = struct{}{}
+	}
+	return result
+}
+
+// Глобальные переменные
+var BLOCKS = map[int]structures.BlockConfig{
+	1067: {
+		Description: "video review",
+		Block:       EventKindKeys,
+		Cancel:      unionSets(createSetStruct([]int{1068, 1070}), Unblocks),
+	},
+	1069: {
+		Description: "possible video review",
+		Block:       EventKindKeys,
+		Cancel:      createSetStruct([]int{1067, 1068, 1070}),
+	},
+	1149: {
+		Description: "possible card",
+		Block:       createSetBool([]string{"400200", "10200201"}),
+		Cancel:      createSetStruct([]int{1108, 1150, 1179}),
+	},
+	1170: {
+		Description: "fight",
+		Block:       EventKindKeys,
+		Cancel:      unionSets(createSetStruct([]int{1109, 1150, 1173, 1177, 1179, 3371}), Unblocks),
+	},
+	1176: {
+		Description: "possible red card",
+		Block:       EventKindKeys,
+		Cancel:      createSetStruct([]int{1108, 1109, 1150, 1177, 3371}),
+	},
+	1178: {
+		Description: "possible yellow card",
+		Block:       createSetBool([]string{"400200", "10200201"}),
+		Cancel:      unionSets(createSetStruct([]int{1108, 1150, 1179}), Unblocks),
+	},
+	1188: {
+		Description: "possible goal",
+		Block:       EventKindKeys,
+		Cancel:      unionSets(createSetStruct([]int{1100, 1189}), Unblocks),
+	},
+	1190: {
+		Description: "possible corner",
+		Block:       createSetBool([]string{"400100", "10100201"}),
+		Cancel:      unionSets(createSetStruct([]int{1191}), Unblocks),
+	},
+	1192: {
+		Description: "possible penalty",
+		Block:       EventKindKeys,
+		Cancel:      unionSets(createSetStruct([]int{1110, 1152, 1154, 1193}), Unblocks),
+	},
+	1253: {
+		Description: "possible throw-ins",
+		Block:       createSetBool([]string{"401000", "11000201"}),
+		Cancel:      unionSets(createSetStruct([]int{1110, 1152, 1154, 1254}), Unblocks),
+	},
 }

@@ -28,7 +28,7 @@ func cutEvents(events []structures.EventStruct, timestamp int64) []structures.Ev
 }
 
 func isLiveFun(settings structures.SettingsStruct, matchState structures.MatchStateCurrentStruct,
-	events []structures.EventStruct) map[string]bool {
+	events []structures.EventStruct, basePoints []structures.BasePointStruct) map[string]bool {
 
 	result := make(map[string]bool)
 	for _, eK := range settings.TargetEventKind {
@@ -59,8 +59,26 @@ func isLiveFun(settings structures.SettingsStruct, matchState structures.MatchSt
 
 	if settings.FollowProviderCancels { // Следование за снятиями провайдера
 		for _, eK := range settings.TargetEventKind {
-			if settings.Providers[eK].MatchClosed {
+			switch {
+			case settings.Providers[eK].MatchClosed:
 				result[eK] = false
+			case (eK == "100201" || eK == "100202") && matchState.Timer <= 2400:
+				{
+					for _, bP := range basePoints {
+						if bP.EventKind == eK && len(bP.Factors) > 0 {
+							flag := true
+							for _, factor := range bP.Factors {
+								if !factor.Disabled || factor.Value != 0 {
+									flag = false
+									break
+								}
+							}
+							if flag {
+								result[eK] = false
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -68,20 +86,25 @@ func isLiveFun(settings structures.SettingsStruct, matchState structures.MatchSt
 	return result
 }
 
-func bPIDFun(eK string, settings structures.SettingsStruct) string {
+func bPIDFun(eK string, basePoints []structures.BasePointStruct) string {
+	for _, bP := range basePoints {
+		if bP.EventKind == eK {
+			return bP.ID
+		}
+	}
 	return "0"
 }
 
 func getActiveEventKind(settings structures.SettingsStruct, matchState structures.MatchStateCurrentStruct,
-	events []structures.EventStruct) map[string]structures.EventKindsActive {
+	events []structures.EventStruct, basePoints []structures.BasePointStruct) map[string]structures.EventKindsActive {
 
 	// Объявляем мапу с указателями на структуры
 	result := make(map[string]structures.EventKindsActive)
-	isLiveSet := isLiveFun(settings, matchState, events)
+	isLiveSet := isLiveFun(settings, matchState, events, basePoints)
 
 	for _, eK := range settings.TargetEventKind {
 		tmp := result[eK]
-		tmp.BPID = bPIDFun(eK, settings)
+		// tmp.BPID = bPIDFun(eK, basePoints)
 		tmp.IsLive = isLiveSet[eK]
 		tmp.IsActive = true
 		tmp.IsBlocked = true
@@ -90,8 +113,8 @@ func getActiveEventKind(settings structures.SettingsStruct, matchState structure
 	return result
 }
 
-func createMatchStateCurrent(
-	events []structures.EventStruct, settings structures.SettingsStruct) structures.MatchStateCurrentStruct {
+func createMatchStateCurrent(events []structures.EventStruct, settings structures.SettingsStruct,
+	basePoints []structures.BasePointStruct) structures.MatchStateCurrentStruct {
 
 	var matchState structures.MatchStateCurrentStruct
 
@@ -99,7 +122,7 @@ func createMatchStateCurrent(
 	events = cutEvents(events, matchState.Timestamp)
 	matchState.Part, matchState.Timer = partTimer(events, settings.ServerTime, settings)
 	matchState.Injury = bcGetInjury(events, settings)
-	matchState.EventKinds = getActiveEventKind(settings, matchState, events)
+	matchState.EventKinds = getActiveEventKind(settings, matchState, events, basePoints)
 
 	return matchState
 }
