@@ -178,7 +178,7 @@ func moveUp1102(events []structures.EventStruct) []structures.EventStruct {
 	// Находим индекс первого события таймера первого тайма
 	var timerIdx int = len(events)
 	for i, ev := range events {
-		if _, ok := constants.BcTimer[ev.Type]; ok && *ev.I2 == 1 {
+		if constants.BcTimer[ev.Type] && *ev.I2 == 1 {
 			timerIdx = i
 			break
 		}

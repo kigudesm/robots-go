@@ -26,4 +26,5 @@ type MatchStateCurrentStruct struct {
 	Removal    [2]int                      // количество удалений в обеих командах
 	Scores     map[string][2]int           // счет по каждому activeEventKind
 	History    map[string][]EventStruct    // история по каждому activeEventKind
+	Alerts     []string                    // Алерты
 }

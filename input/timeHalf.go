@@ -23,7 +23,7 @@ func partTimer(events []structures.EventStruct, timestamp int64, settings struct
 	var part structures.PartStruct
 	var timer int64
 	for i, event := range events {
-		if _, ok := constants.BcTimer[event.Type]; ok { // Событие из BcTimer
+		if constants.BcTimer[event.Type] { // Событие из BcTimer
 			part.IsGoing = true
 			part.Nmb = *event.I2
 			regtime := bcTimeToTimestamp(event.RegTime)
@@ -32,7 +32,7 @@ func partTimer(events []structures.EventStruct, timestamp int64, settings struct
 			var timerOld int64 = -1
 			for j := i + 1; j < len(events); j++ {
 				eventOld := events[j]
-				if _, ok := constants.BcTimer[eventOld.Type]; ok && *eventOld.I2 == part.Nmb {
+				if constants.BcTimer[eventOld.Type] && *eventOld.I2 == part.Nmb {
 					regtimeOld := bcTimeToTimestamp(eventOld.RegTime)
 					timerOld = int64(*eventOld.I3) + timestamp - regtimeOld
 					break

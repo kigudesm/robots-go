@@ -18,6 +18,7 @@ type SettingsStruct struct {
 	EventGameTypeIdent            string                    // Тип матча (с добаленным временем, серией пенальти и т.п.)
 	SwitchToTwoWayBetsProbability float64                   // Вероятность для перехода на двухисходку
 	FollowProviderCancels         bool                      // Следование за снятиями провайдера
+	FollowProviderBlocks          bool                      // Следование за блокировками провайдера
 	HalfDuration                  int64                     // Длительность тайма
 	MatchDuration                 int64                     // Длительность матча
 	PartTimes                     map[int]PartBeginEnd      // Начало и конец таймов

@@ -72,6 +72,9 @@ func parsingSettingsFun(request map[string]any) structures.SettingsStruct {
 	// Следование за снятиями провайдера
 	settings.FollowProviderCancels = set["autoLiveScheme"].(map[string]any)["object"].(map[string]any)["followProviderCancels"].(bool)
 
+	// Следование за блокировками провайдера
+	settings.FollowProviderBlocks = set["autoLiveScheme"].(map[string]any)["object"].(map[string]any)["followProviderBlocks"].(bool)
+
 	// Находим провайдеров по каждому eventKind
 	settings.Providers = getProviders(set)
 

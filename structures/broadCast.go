@@ -16,6 +16,6 @@ type EventStruct struct {
 // Описывает конфигурацию блокировки
 type BlockConfig struct {
 	Description string
-	Block       map[string]bool  // Множество блокируемых событий от сканера
-	Cancel      map[int]struct{} // Множество отменяющих событий трансляции
+	Block       map[string]bool // Множество блокируемых событий от сканера
+	Cancel      map[int]bool    // Множество отменяющих событий трансляции
 }
