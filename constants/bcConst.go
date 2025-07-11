@@ -16,6 +16,11 @@ var BcTimer = map[int]bool{
 	1197: true, 1198: true, 1199: true, 1228: true, 1234: true, 1255: true,
 }
 
+var PenaltyUnblocks = map[int]bool{
+	1019: true, 1100: true, 1101: true, 1102: true, 1103: true, 1106: true, 1107: true, 1113: true, 1115: true, 1116: true,
+	1117: true, 1118: true, 1152: true, 1154: true, 1156: true, 1164: true, 1168: true, 1196: true, 1421: true, 2681: true,
+}
+
 var BcStatistics = map[int]struct{}{
 	1052: {}, 1145: {}, 1171: {}, 1172: {}, 1173: {}, 1621: {}, 1200: {}, 1201: {}, 1202: {},
 	1203: {}, 1204: {}, 1205: {}, 1206: {}, 1207: {}, 1208: {}, 1209: {}, 1210: {}, 1211: {}, 1212: {},

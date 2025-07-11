@@ -19,6 +19,7 @@ type SettingsStruct struct {
 	SwitchToTwoWayBetsProbability float64                   // Вероятность для перехода на двухисходку
 	FollowProviderCancels         bool                      // Следование за снятиями провайдера
 	FollowProviderBlocks          bool                      // Следование за блокировками провайдера
+	SportscastProviderLayerId     string                    // Провайдер трансляции
 	HalfDuration                  int64                     // Длительность тайма
 	MatchDuration                 int64                     // Длительность матча
 	PartTimes                     map[int]PartBeginEnd      // Начало и конец таймов

@@ -20,11 +20,13 @@ type MatchStateCurrentStruct struct {
 	// Events     []EventStruct            // Трансляция на текущий момент
 	Part       PartStruct                  // Тайм в матче
 	Timer      int64                       // Значение таймера
-	Injury     [2]int                      // Компенсированное время фактическое
+	InjuryTime [2]int                      // Компенсированное время фактическое
 	EventKinds map[string]EventKindsActive // eventKinds которые требуют действий
+	Suspended  bool                        // Матч приостановлен
+	Var        bool                        // Просмотр видеорефери
 	Penalty    int                         // 0 - если пенальти не пробивается, i - команда пробивающая пенальти
 	Removal    [2]int                      // количество удалений в обеих командах
 	Scores     map[string][2]int           // счет по каждому activeEventKind
 	History    map[string][]EventStruct    // история по каждому activeEventKind
-	Alerts     []string                    // Алерты
+	Alerts     *[]string                   // Алерты
 }
