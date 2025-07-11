@@ -19,10 +19,11 @@ func bcTimeToTimestamp(regtime string) int64 {
 }
 
 // Вычисление Part и Timer
-func partTimer(events []structures.EventStruct, timestamp int64, settings structures.SettingsStruct) (structures.PartStruct, int64) {
-	var part structures.PartStruct
+func partTimer(eventsPtr *[]structures.EventInfo, timestamp int64, settPtr *structures.MatchSettings) (
+	structures.Part, int64) {
+	var part structures.Part
 	var timer int64
-	for i, event := range events {
+	for i, event := range *eventsPtr {
 		if constants.BcTimer[event.Type] { // Событие из BcTimer
 			part.IsGoing = true
 			part.Nmb = *event.I2
@@ -30,8 +31,8 @@ func partTimer(events []structures.EventStruct, timestamp int64, settings struct
 			timer = int64(*event.I3) + timestamp - regtime
 			// Ищем следующее подходящее событие из BcTimer для отсечения ошибок
 			var timerOld int64 = -1
-			for j := i + 1; j < len(events); j++ {
-				eventOld := events[j]
+			for j := i + 1; j < len(*eventsPtr); j++ {
+				eventOld := (*eventsPtr)[j]
 				if constants.BcTimer[eventOld.Type] && *eventOld.I2 == part.Nmb {
 					regtimeOld := bcTimeToTimestamp(eventOld.RegTime)
 					timerOld = int64(*eventOld.I3) + timestamp - regtimeOld
@@ -54,27 +55,27 @@ func partTimer(events []structures.EventStruct, timestamp int64, settings struct
 				part.IsGoing = true
 				part.Nmb = *event.I1
 				regtime := bcTimeToTimestamp(event.RegTime)
-				return part, settings.PartTimes[part.Nmb].Begin + timestamp - regtime
+				return part, settPtr.PartTimes[part.Nmb].Begin + timestamp - regtime
 			}
 		case 1103: // Окончание матча
 			{
 				part.IsGoing = false
-				if settings.EventGameTypeIdent == "regular" {
+				if settPtr.EventGameTypeIdent == "regular" {
 					part.Nmb = -1
-					return part, settings.MatchDuration
+					return part, settPtr.MatchDuration
 				} else {
 					part.Nmb = 2
-					return part, settings.MatchDuration
+					return part, settPtr.MatchDuration
 				}
 			}
 		case 1102: // Конец тайма
 			{
 				part.IsGoing = false
 				part.Nmb = *event.I1
-				if (part.Nmb == 2 && settings.EventGameTypeIdent == "regular") || (part.Nmb == 5) {
+				if (part.Nmb == 2 && settPtr.EventGameTypeIdent == "regular") || (part.Nmb == 5) {
 					part.Nmb = -1
 				}
-				return part, settings.PartTimes[*event.I1].End
+				return part, settPtr.PartTimes[*event.I1].End
 			}
 		}
 	}

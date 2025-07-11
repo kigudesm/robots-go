@@ -7,9 +7,9 @@ import (
 	"sort"
 )
 
-func convertEventToStruct(ev map[string]any) structures.EventStruct {
+func convertEventToStruct(ev map[string]any) structures.EventInfo {
 
-	var event structures.EventStruct
+	var event structures.EventInfo
 
 	// Обязательные поля
 	event.ID = int64(ev["id"].(float64))
@@ -45,11 +45,11 @@ func convertEventToStruct(ev map[string]any) structures.EventStruct {
 	return event
 }
 
-func parsingEventsFun(request map[string]any) []structures.EventStruct {
+func parsingEventsFun(request map[string]any) []structures.EventInfo {
 
 	evs := request["events"].([]any)
 
-	var events []structures.EventStruct
+	var events []structures.EventInfo
 
 	for _, item := range evs {
 		if ev, ok := item.(map[string]any); ok {
@@ -60,8 +60,8 @@ func parsingEventsFun(request map[string]any) []structures.EventStruct {
 	return events
 }
 
-func getProviders(set map[string]any) map[string]structures.ProviderStruct {
-	result := make(map[string]structures.ProviderStruct)
+func getProviders(set map[string]any) map[string]structures.ProviderInfo {
+	result := make(map[string]structures.ProviderInfo)
 	pEKs, _ := set["betScannerSourcesSettingsByEventKinds"].([]any)
 	for _, item := range pEKs {
 		peK, _ := item.(map[string]any)
@@ -90,11 +90,11 @@ func getProviders(set map[string]any) map[string]structures.ProviderStruct {
 	return result
 }
 
-func bcExcludeEvents(events []structures.EventStruct) []structures.EventStruct {
+func bcExcludeEvents(eventsPtr *[]structures.EventInfo) []structures.EventInfo {
 	// Создаем map для исключаемых ID (используем map для быстрого поиска)
 	excludeMap := make(map[int64]bool)
 
-	for _, ev := range events {
+	for _, ev := range *eventsPtr {
 		if ev.Type == 1020 {
 			// Проверяем наличие optional-полей перед вычислением
 			if ev.I1 != nil && ev.I2 != nil {
@@ -106,8 +106,8 @@ func bcExcludeEvents(events []structures.EventStruct) []structures.EventStruct {
 	}
 
 	// Фильтруем исходный слайс
-	var result []structures.EventStruct
-	for _, ev := range events {
+	var result []structures.EventInfo
+	for _, ev := range *eventsPtr {
 		// Исключаем события типа 1020 и в BCStatistics и те, чьи ID есть в excludeMap
 		if _, ok := constants.BcStatistics[ev.Type]; !ok && ev.Type != 1020 && !excludeMap[ev.ID] {
 			result = append(result, ev)
@@ -123,24 +123,24 @@ func bcExcludeEvents(events []structures.EventStruct) []structures.EventStruct {
 }
 
 // Исключение из трансляции ошибочных событий 1102 и 1103
-func bcExcludeMistakes(events []structures.EventStruct, settings structures.SettingsStruct) (
-	[]structures.EventStruct, structures.SettingsStruct) {
+func bcExcludeMistakes(eventsPtr *[]structures.EventInfo, settPtr *structures.MatchSettings) []structures.EventInfo {
 
 	var timer int64
-	var part structures.PartStruct
+	var part structures.Part
 	excludeMap := make(map[int]bool)
 
-	for i, event := range events {
+	for i, event := range *eventsPtr {
 		switch event.Type {
 		case 1103:
 			{
-				_, timer = partTimer(events[i+1:], bcTimeToTimestamp(event.RegTime), settings)
-				if timer < settings.MatchDuration-120 {
+				eventsRemaining := (*eventsPtr)[i+1:]
+				_, timer = partTimer(&eventsRemaining, bcTimeToTimestamp(event.RegTime), settPtr)
+				if timer < settPtr.MatchDuration-120 {
 					excludeMap[i] = true
-					settings.BlockAll = true
-					for _, ev := range events[:i] {
+					settPtr.BlockAll = true
+					for _, ev := range (*eventsPtr)[:i] {
 						if _, ok := constants.Unblocks[ev.Type]; ok {
-							settings.BlockAll = false
+							settPtr.BlockAll = false
 							break
 						}
 					}
@@ -148,13 +148,14 @@ func bcExcludeMistakes(events []structures.EventStruct, settings structures.Sett
 			}
 		case 1102:
 			{
-				part, timer = partTimer(events[i+1:], bcTimeToTimestamp(event.RegTime), settings)
-				if timer < settings.PartTimes[part.Nmb].End-120 {
+				eventsRemaining := (*eventsPtr)[i+1:]
+				part, timer = partTimer(&eventsRemaining, bcTimeToTimestamp(event.RegTime), settPtr)
+				if timer < settPtr.PartTimes[part.Nmb].End-120 {
 					excludeMap[i] = true
-					settings.BlockAll = true
-					for _, ev := range events[:i] {
+					settPtr.BlockAll = true
+					for _, ev := range (*eventsPtr)[:i] {
 						if _, ok := constants.Unblocks[ev.Type]; ok {
-							settings.BlockAll = false
+							settPtr.BlockAll = false
 							break
 						}
 					}
@@ -163,18 +164,18 @@ func bcExcludeMistakes(events []structures.EventStruct, settings structures.Sett
 		}
 	}
 
-	var result []structures.EventStruct
-	for i, v := range events {
+	var result []structures.EventInfo
+	for i, v := range *eventsPtr {
 		if !excludeMap[i] {
 			result = append(result, v)
 		}
 	}
-
-	return result, settings
+	return result
 }
 
-func moveUp1102(events []structures.EventStruct) []structures.EventStruct {
+func moveUp1102(eventsPtr *[]structures.EventInfo) []structures.EventInfo {
 
+	events := *eventsPtr
 	// Находим индекс первого события таймера первого тайма
 	var timerIdx int = len(events)
 	for i, ev := range events {
@@ -190,7 +191,7 @@ func moveUp1102(events []structures.EventStruct) []structures.EventStruct {
 			// Удаляем и вставляем на новую позицию
 			ev := events[i]
 			events = append(events[:i], events[i+1:]...)
-			events = append(events[:timerIdx], append([]structures.EventStruct{ev}, events[timerIdx:]...)...)
+			events = append(events[:timerIdx], append([]structures.EventInfo{ev}, events[timerIdx:]...)...)
 			break
 		}
 	}
@@ -198,8 +199,8 @@ func moveUp1102(events []structures.EventStruct) []structures.EventStruct {
 	return events
 }
 
-func bcReverse(events []structures.EventStruct) []structures.EventStruct {
-	for _, event := range events {
+func bcReverse(eventsPtr *[]structures.EventInfo) []structures.EventInfo {
+	for _, event := range *eventsPtr {
 		if value, ok := constants.EventsWithTeam[event.Type]; ok {
 			switch value {
 			case "i1":
@@ -225,18 +226,17 @@ func bcReverse(events []structures.EventStruct) []structures.EventStruct {
 			}
 		}
 	}
-	return events
+	return *eventsPtr
 }
 
-func bcTransformation(request map[string]any, settings structures.SettingsStruct) (
-	[]structures.EventStruct, structures.SettingsStruct) {
-	events := parsingEventsFun(request)                    // parse events
-	events = bcExcludeEvents(events)                       // exclude 1020 and statistics
-	events, settings = bcExcludeMistakes(events, settings) // exclude ends 1102 and 1103 with mistakes
-	events = moveUp1102(events)                            // move up 1102 if mistake
-	if settings.SportscastReverseTeams {                   //reverse broadcast if SportscastReverseTeams == true
-		events = bcReverse(events)
+func bcTransformation(request map[string]any, settPtr *structures.MatchSettings) []structures.EventInfo {
+	events := parsingEventsFun(request)          // parse events
+	events = bcExcludeEvents(&events)            // exclude 1020 and statistics
+	events = bcExcludeMistakes(&events, settPtr) // exclude ends 1102 and 1103 with mistakes
+	events = moveUp1102(&events)                 // move up 1102 if mistake
+	if settPtr.SportscastReverseTeams {          //reverse broadcast if SportscastReverseTeams == true
+		events = bcReverse(&events)
 	}
 
-	return events, settings
+	return events
 }

@@ -7,7 +7,7 @@ type Factor struct {
 	Disabled  bool
 }
 
-type BasePointStruct struct {
+type BasePoint struct {
 	ID            string
 	EventKind     string
 	ProviderLayer string

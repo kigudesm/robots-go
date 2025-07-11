@@ -7,10 +7,10 @@ import (
 	"robots-go/utils"
 )
 
-func bcGetInjury(events []structures.EventStruct, settings structures.SettingsStruct) [2]int {
-	result := settings.InjuryDefault
+func bcGetInjury(eventsPtr *[]structures.EventInfo, settPtr *structures.MatchSettings) [2]int {
+	result := settPtr.InjuryDefault
 	for i := range 2 {
-		for _, event := range events {
+		for _, event := range *eventsPtr {
 			if event.Type == 1104 && *event.I1 != 0 && *event.I2 == i+1 {
 				result[i] = *event.I1 * 60
 				break
@@ -20,7 +20,7 @@ func bcGetInjury(events []structures.EventStruct, settings structures.SettingsSt
 	return result
 }
 
-func cutEvents(events []structures.EventStruct, timestamp int64) []structures.EventStruct {
+func cutEvents(events []structures.EventInfo, timestamp int64) []structures.EventInfo {
 	for i, event := range events {
 		if bcTimeToTimestamp(event.RegTime) <= timestamp {
 			return events[i:]
@@ -29,22 +29,22 @@ func cutEvents(events []structures.EventStruct, timestamp int64) []structures.Ev
 	return events[:0]
 }
 
-func isLiveFun(settings structures.SettingsStruct, matchState structures.MatchStateCurrentStruct,
-	events []structures.EventStruct, basePoints []structures.BasePointStruct) map[string]bool {
+func isLiveFun(settPtr *structures.MatchSettings, matchState structures.MatchStateCurrent,
+	eventsPtr *[]structures.EventInfo, basePointsPtr *[]structures.BasePoint) map[string]bool {
 
 	result := make(map[string]bool)
-	for _, eK := range settings.TargetEventKind {
+	for _, eK := range settPtr.TargetEventKind {
 		result[eK] = true
 	}
 
 	// Блокировка до начала матча
-	if matchState.Timestamp < settings.StartTime {
+	if matchState.Timestamp < settPtr.StartTime {
 		return make(map[string]bool)
 	}
 
 	// Блокировка через 15 сек. после окончания матча
-	if matchState.Part.Nmb == -1 {
-		for _, event := range events {
+	if matchState.Half.Nmb == -1 {
+		for _, event := range *eventsPtr {
 			if (event.Type == 1103) || (event.Type == 1102) {
 				if matchState.Timestamp > bcTimeToTimestamp(event.RegTime)+15 {
 					return make(map[string]bool)
@@ -54,8 +54,8 @@ func isLiveFun(settings structures.SettingsStruct, matchState structures.MatchSt
 	}
 
 	// Блокировка таймов, после окончания первого тайма
-	if !(matchState.Part.Nmb == 0 || (matchState.Part.IsGoing && matchState.Part.Nmb == 1)) {
-		for _, eK := range settings.TargetEventKind {
+	if !(matchState.Half.Nmb == 0 || (matchState.Half.IsGoing && matchState.Half.Nmb == 1)) {
+		for _, eK := range settPtr.TargetEventKind {
 			if constants.EventKinds[eK].Name != "match" {
 				result[eK] = false
 			}
@@ -63,14 +63,14 @@ func isLiveFun(settings structures.SettingsStruct, matchState structures.MatchSt
 	}
 
 	// Следование за снятиями провайдера
-	if settings.FollowProviderCancels {
-		for _, eK := range settings.TargetEventKind {
+	if settPtr.FollowProviderCancels {
+		for _, eK := range settPtr.TargetEventKind {
 			switch {
-			case settings.Providers[eK].MatchClosed:
+			case settPtr.Providers[eK].MatchClosed:
 				result[eK] = false
 			case (eK == "100201" || eK == "100202") && matchState.Timer <= 2400:
 				{
-					for _, bP := range basePoints {
+					for _, bP := range *basePointsPtr {
 						if bP.EventKind == eK && len(bP.Factors) > 0 {
 							flag := true
 							for _, factor := range bP.Factors {
@@ -102,23 +102,23 @@ func isLiveFun(settings structures.SettingsStruct, matchState structures.MatchSt
 // 	return "0"
 // }
 
-func isActiveFun(settings structures.SettingsStruct, matchState structures.MatchStateCurrentStruct,
+func isActiveFun(settPtr *structures.MatchSettings, matchState structures.MatchStateCurrent,
 	isLiveSet map[string]bool) map[string]bool {
 
 	result := isLiveSet
 
 	// Матч почти завершен
-	if matchState.Part.IsGoing && matchState.Part.Nmb == 2 &&
-		matchState.Timer >= settings.MatchDuration+int64(matchState.InjuryTime[1]) {
+	if matchState.Half.IsGoing && matchState.Half.Nmb == 2 &&
+		matchState.Timer >= settPtr.MatchDuration+int64(matchState.InjuryTime[1]) {
 		log.Println("Match is almost over")
 		return make(map[string]bool)
 	}
 
 	// Первый тайм почти завершен
-	if matchState.Part.IsGoing && matchState.Part.Nmb == 1 &&
-		matchState.Timer >= settings.HalfDuration+int64(matchState.InjuryTime[0]) {
+	if matchState.Half.IsGoing && matchState.Half.Nmb == 1 &&
+		matchState.Timer >= settPtr.HalfDuration+int64(matchState.InjuryTime[0]) {
 		log.Println("First half is almost over")
-		for _, eK := range settings.TargetEventKind {
+		for _, eK := range settPtr.TargetEventKind {
 			if constants.EventKinds[eK].Name != "match" {
 				result[eK] = false
 			}
@@ -135,39 +135,38 @@ func blockAll(target []string) map[string]bool {
 	return result
 }
 
-func isBlockedFun(
-	settings structures.SettingsStruct, matchState structures.MatchStateCurrentStruct, events []structures.EventStruct,
-	basePoints []structures.BasePointStruct, isActiveSet map[string]bool) map[string]bool {
+func isBlockedFun(settPtr *structures.MatchSettings, matchState structures.MatchStateCurrent,
+	eventsPtr *[]structures.EventInfo, basePointsPtr *[]structures.BasePoint, isActiveSet map[string]bool) map[string]bool {
 
 	result := make(map[string]bool)
 
-	if settings.BlockAll { // Если ранее все было заблокировано
-		return blockAll(settings.TargetEventKind)
+	if settPtr.BlockAll { // Если ранее все было заблокировано
+		return blockAll(settPtr.TargetEventKind)
 	}
 
 	// Блокировка по 1017
-	for idx, event := range events {
+	for idx, event := range *eventsPtr {
 		if event.Type == 1017 && utils.SliceToSet([]int{1, 4, 5, 6, 8, 10})[*event.I2] {
 			flag := true
 			setStruct := utils.UnionSets(utils.SliceToSet([]int{1019}), constants.Unblocks)
-			for _, ev := range events[:idx] {
+			for _, ev := range (*eventsPtr)[:idx] {
 				if setStruct[ev.Type] {
 					flag = false
 					break
 				}
 			}
 			if flag {
-				return blockAll(settings.TargetEventKind)
+				return blockAll(settPtr.TargetEventKind)
 			}
 			break
 		}
 	}
 
 	// Блокировка по 1006, 1134, 1135
-	for idx, event := range events {
+	for idx, event := range *eventsPtr {
 		if (event.Type == 1006 && utils.SliceToSet([]int{1, 2, 3})[*event.I1]) || event.Type == 1134 || event.Type == 1135 {
 			flag := true
-			for _, ev := range events[:idx] {
+			for _, ev := range (*eventsPtr)[:idx] {
 				if constants.Unblocks[ev.Type] {
 					flag = false
 					break
@@ -177,17 +176,17 @@ func isBlockedFun(
 				if matchState.Timestamp-bcTimeToTimestamp(event.RegTime) >= 600 {
 					*matchState.Alerts = append(*matchState.Alerts, "Источник СТ перенёс/отменил трансляцию")
 				}
-				return blockAll(settings.TargetEventKind)
+				return blockAll(settPtr.TargetEventKind)
 			}
 		}
 	}
 
 	// Блокировка по constants.Blocks
 	for key, value := range constants.Blocks {
-		for idx, event := range events {
+		for idx, event := range *eventsPtr {
 			if event.Type == key {
 				flag := true
-				for _, ev := range events[:idx] {
+				for _, ev := range (*eventsPtr)[:idx] {
 					if value.Cancel[ev.Type] {
 						flag = false
 						break
@@ -195,7 +194,7 @@ func isBlockedFun(
 				}
 				// Разблокировка 1149 и 1176 по опорной точке на матч
 				if event.Type == 1149 || event.Type == 1176 {
-					for _, bP := range basePoints {
+					for _, bP := range *basePointsPtr {
 						if bP.EventKind == "1" && bP.TimeStamp > bcTimeToTimestamp(event.RegTime) {
 							lenFactors := 0
 							for _, factor := range bP.Factors {
@@ -220,10 +219,10 @@ func isBlockedFun(
 	}
 
 	// Блокировка {1, 100201} за котировками провайдера
-	if settings.FollowProviderBlocks {
+	if settPtr.FollowProviderBlocks {
 		providerBlock := make(map[string]string)
 		for eK := range map[string]bool{"1": true, "100201": true} {
-			for _, bP := range basePoints {
+			for _, bP := range *basePointsPtr {
 				if bP.EventKind == eK {
 					lenNonZero := 0
 					lenDisabled := 0
@@ -259,7 +258,7 @@ func isBlockedFun(
 	}
 
 	// Блокируем все неактивные eventKind
-	for _, eK := range settings.TargetEventKind {
+	for _, eK := range settPtr.TargetEventKind {
 		result[eK] = !isActiveSet[eK] || result[eK]
 	}
 
@@ -267,16 +266,16 @@ func isBlockedFun(
 
 }
 
-func getActiveEventKind(settings structures.SettingsStruct, matchState structures.MatchStateCurrentStruct,
-	events []structures.EventStruct, basePoints []structures.BasePointStruct) map[string]structures.EventKindsActive {
+func getActiveEventKind(settPtr *structures.MatchSettings, matchState structures.MatchStateCurrent,
+	eventsPtr *[]structures.EventInfo, basePointsPtr *[]structures.BasePoint) map[string]structures.EventKindsActive {
 
 	// Объявляем мапу с указателями на структуры
 	result := make(map[string]structures.EventKindsActive)
-	isLiveSet := isLiveFun(settings, matchState, events, basePoints)
-	isActiveSet := isActiveFun(settings, matchState, isLiveSet)
-	isBlockedSet := isBlockedFun(settings, matchState, events, basePoints, isActiveSet)
+	isLiveSet := isLiveFun(settPtr, matchState, eventsPtr, basePointsPtr)
+	isActiveSet := isActiveFun(settPtr, matchState, isLiveSet)
+	isBlockedSet := isBlockedFun(settPtr, matchState, eventsPtr, basePointsPtr, isActiveSet)
 
-	for _, eK := range settings.TargetEventKind {
+	for _, eK := range settPtr.TargetEventKind {
 		tmp := result[eK]
 		// tmp.BPID = bPIDFun(eK, basePoints)
 		tmp.IsLive = isLiveSet[eK]
@@ -287,12 +286,12 @@ func getActiveEventKind(settings structures.SettingsStruct, matchState structure
 	return result
 }
 
-func suspendedFun(events []structures.EventStruct) bool {
-	for idx, event := range events {
+func suspendedFun(eventsPtr *[]structures.EventInfo) bool {
+	for idx, event := range *eventsPtr {
 		if event.Type == 1017 && utils.SliceToSet([]int{1, 4})[*event.I2] {
 			flag := true
 			setStruct := utils.UnionSets(utils.SliceToSet([]int{1019}), constants.Unblocks)
-			for _, ev := range events[:idx] {
+			for _, ev := range (*eventsPtr)[:idx] {
 				if setStruct[ev.Type] {
 					flag = false
 					break
@@ -304,11 +303,11 @@ func suspendedFun(events []structures.EventStruct) bool {
 	return false
 }
 
-func varFun(events []structures.EventStruct) bool {
-	for idx, event := range events {
+func varFun(eventsPtr *[]structures.EventInfo) bool {
+	for idx, event := range *eventsPtr {
 		if event.Type == 1067 {
 			flag := true
-			for _, ev := range events[:idx] {
+			for _, ev := range (*eventsPtr)[:idx] {
 				if constants.Blocks[1067].Cancel[ev.Type] {
 					flag = false
 					break
@@ -320,12 +319,12 @@ func varFun(events []structures.EventStruct) bool {
 	return false
 }
 
-func penaltyFun(events []structures.EventStruct) int {
+func penaltyFun(eventsPtr *[]structures.EventInfo) int {
 	penalty := 0
-	for idx, event := range events {
+	for idx, event := range *eventsPtr {
 		if event.Type == 1110 {
 			penalty = *event.I1
-			for _, ev := range events[:idx] {
+			for _, ev := range (*eventsPtr)[:idx] {
 				if constants.PenaltyUnblocks[ev.Type] {
 					penalty = 0
 					break
@@ -337,7 +336,7 @@ func penaltyFun(events []structures.EventStruct) int {
 	return penalty
 }
 
-func removalFun(bcProvider string, events []structures.EventStruct) [2]int {
+func removalFun(bcProvider string, eventsPtr *[]structures.EventInfo) [2]int {
 
 	var types map[int]bool
 
@@ -348,7 +347,7 @@ func removalFun(bcProvider string, events []structures.EventStruct) [2]int {
 	}
 
 	removal := [2]int{0, 0}
-	for _, event := range events {
+	for _, event := range *eventsPtr {
 		if types[event.Type] {
 			removal[*event.I1-1] += 1
 		}
@@ -356,21 +355,22 @@ func removalFun(bcProvider string, events []structures.EventStruct) [2]int {
 	return removal
 }
 
-func createMatchStateCurrent(events []structures.EventStruct, settings structures.SettingsStruct,
-	basePoints []structures.BasePointStruct) structures.MatchStateCurrentStruct {
+func createMatchStateCurrent(evPtr *[]structures.EventInfo, settPtr *structures.MatchSettings,
+	basePointsPtr *[]structures.BasePoint) structures.MatchStateCurrent {
 
-	var matchState structures.MatchStateCurrentStruct
+	var matchState structures.MatchStateCurrent
 
-	matchState.Timestamp = settings.ServerTime
-	events = cutEvents(events, matchState.Timestamp)
-	matchState.Part, matchState.Timer = partTimer(events, settings.ServerTime, settings)
-	matchState.InjuryTime = bcGetInjury(events, settings)
+	matchState.Timestamp = settPtr.ServerTime
+	events := cutEvents(*evPtr, matchState.Timestamp)
+	matchState.Half, matchState.Timer = partTimer(&events, settPtr.ServerTime, settPtr)
+	matchState.InjuryTime = bcGetInjury(&events, settPtr)
 	matchState.Alerts = &[]string{}
-	matchState.EventKinds = getActiveEventKind(settings, matchState, events, basePoints)
-	matchState.Suspended = suspendedFun(events)
-	matchState.Var = varFun(events)
-	matchState.Penalty = penaltyFun(events)
-	matchState.Removal = removalFun(settings.SportscastProviderLayerId, events)
+	matchState.EventKinds = getActiveEventKind(settPtr, matchState, &events, basePointsPtr)
+	matchState.Suspended = suspendedFun(&events)
+	matchState.Var = varFun(&events)
+	matchState.Penalty = penaltyFun(&events)
+	matchState.Removal = removalFun(settPtr.SportscastProviderLayerId, &events)
+	// matchState.History = historyFun(&events)
 
 	return matchState
 }

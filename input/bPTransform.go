@@ -24,16 +24,16 @@ func confertFactorsToStruct(ff []any) []structures.Factor {
 	return factors
 }
 
-func filterBPs(bPs []structures.BasePointStruct, settings structures.SettingsStruct) []structures.BasePointStruct {
+func filterBPs(bPsPtr *[]structures.BasePoint, settPtr *structures.MatchSettings) []structures.BasePoint {
 
-	var result []structures.BasePointStruct
+	var result []structures.BasePoint
 
 	// Фильтрация по провайдерам и максимуму timestamp
-	for _, eK := range settings.TargetEventKind {
+	for _, eK := range settPtr.TargetEventKind {
 		var timestampMax int64 = 0
-		var bPMax structures.BasePointStruct
-		for _, bP := range bPs {
-			if bP.EventKind == eK && bP.ProviderLayer == settings.Providers[eK].ID && bP.TimeStamp > timestampMax {
+		var bPMax structures.BasePoint
+		for _, bP := range *bPsPtr {
+			if bP.EventKind == eK && bP.ProviderLayer == settPtr.Providers[eK].ID && bP.TimeStamp > timestampMax {
 				timestampMax = bP.TimeStamp
 				bPMax = bP
 			}
@@ -44,10 +44,10 @@ func filterBPs(bPs []structures.BasePointStruct, settings structures.SettingsStr
 	return result
 }
 
-func convertBPToStruct(bP any) structures.BasePointStruct {
+func convertBPToStruct(bP any) structures.BasePoint {
 	baseP := bP.(map[string]any)
 
-	var basePoint structures.BasePointStruct
+	var basePoint structures.BasePoint
 
 	// Обязательные поля
 	basePoint.ID = baseP["id"].(string)
@@ -62,11 +62,11 @@ func convertBPToStruct(bP any) structures.BasePointStruct {
 	return basePoint
 }
 
-func bPTransformation(request map[string]any, settings structures.SettingsStruct) []structures.BasePointStruct {
+func bPTransformation(request map[string]any, settPtr *structures.MatchSettings) []structures.BasePoint {
 
 	bPs := request["basePoints"].([]any)
 
-	var basePoints []structures.BasePointStruct
+	var basePoints []structures.BasePoint
 
 	// Парсинг
 	for _, bP := range bPs {
@@ -74,7 +74,7 @@ func bPTransformation(request map[string]any, settings structures.SettingsStruct
 	}
 
 	// Фильтрация по провайдерам и максимуму timestamp
-	basePoints = filterBPs(basePoints, settings)
+	basePoints = filterBPs(&basePoints, settPtr)
 
 	return basePoints
 }

@@ -147,3 +147,23 @@ var Blocks = map[int]structures.BlockConfig{
 		Cancel:      utils.UnionSets(utils.SliceToSet([]int{1110, 1152, 1154, 1254}), Unblocks),
 	},
 }
+
+var Kinds = map[string]int{
+	"goals":            1100,
+	"corners":          1101,
+	"yellow cards":     1108,
+	"fouls":            1197,
+	"shots on goal":    1114,
+	"offsides":         1196,
+	"throw-ins":        1164,
+	"goal kicks":       1168,
+	"hit the woodwork": 1198,
+	"video reviews":    1067,
+	"total shots":      1115,
+}
+
+var Names = map[string]int{
+	"match":  0,
+	"first":  1,
+	"second": 2,
+}

@@ -8,10 +8,10 @@ import (
 	"strconv"
 )
 
-func parsingSettingsFun(request map[string]any) structures.SettingsStruct {
+func parsingSettingsFun(request map[string]any) structures.MatchSettings {
 
 	set := request["settings"].(map[string]any)
-	var settings structures.SettingsStruct
+	var settings structures.MatchSettings
 
 	// Парсим targetEventKind
 	tek := set["targetEventKind"].([]any)

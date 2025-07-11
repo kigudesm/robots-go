@@ -1,7 +1,7 @@
 package structures
 
 // Трансляция
-type EventStruct struct {
+type EventInfo struct {
 	ID      int64  // id события
 	RegTime string // время
 	Type    int    // тип
